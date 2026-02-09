@@ -1,7 +1,36 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\services\\gameservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\services\\gameservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\models\\gamestatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\models\\gamestatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\core\\checkers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\core\\checkers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\core\\solver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\core\\solver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\core\\puzzlegenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\core\\puzzlegenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\services\\igameservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\services\\igameservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|c:\\users\\nikolas\\desktop\\projects\\3d-sudoku\\3d-sudoku.server\\models\\moveresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2D03003-5CAD-4A05-8959-050CDC3739D9}|3D-Sudoku.Server\\3D-Sudoku.Server.csproj|solutionrelative:3d-sudoku.server\\models\\moveresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 1,
@@ -9,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 234,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -22,6 +51,96 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PuzzleGenerator.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\PuzzleGenerator.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Core\\PuzzleGenerator.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\PuzzleGenerator.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Core\\PuzzleGenerator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T16:01:34.833Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "IGameService.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Services\\IGameService.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Services\\IGameService.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Services\\IGameService.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Services\\IGameService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:49:10.135Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Solver.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\Solver.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Core\\Solver.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\Solver.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Core\\Solver.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:49:04.686Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GameStateDTO.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Models\\GameStateDTO.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Models\\GameStateDTO.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Models\\GameStateDTO.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Models\\GameStateDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:49:02.249Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GameService.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Services\\GameService.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Services\\GameService.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Services\\GameService.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Services\\GameService.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAvwE8AAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:48:59.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Checkers.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\Checkers.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Core\\Checkers.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Core\\Checkers.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Core\\Checkers.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE8AAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:46:30.59Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MoveResponse.cs",
+              "DocumentMoniker": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Models\\MoveResponse.cs",
+              "RelativeDocumentMoniker": "3D-Sudoku.Server\\Models\\MoveResponse.cs",
+              "ToolTip": "C:\\Users\\Nikolas\\Desktop\\Projects\\3D-Sudoku\\3D-Sudoku.Server\\Models\\MoveResponse.cs",
+              "RelativeToolTip": "3D-Sudoku.Server\\Models\\MoveResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-03T08:46:18.087Z"
             }
           ]
         }

@@ -23,7 +23,7 @@ namespace ThreeDSudoku.Server.Core
         public SolvabilityResult Solve()
         {
             bool progress = true;
-            Difficulty maxDifficulty = Difficulty.Easy;
+            Difficulty maxDifficulty = Difficulty.Classic;
             int iterations = 0;
 
             while (progress && !IsSolved())
@@ -78,7 +78,7 @@ namespace ThreeDSudoku.Server.Core
             }
 
             _result.IsSolvable = IsSolved();
-            _result.Difficulty = _result.IsSolvable ? maxDifficulty : Difficulty.Impossible;
+            _result.Difficulty = _result.IsSolvable ? maxDifficulty : Difficulty.BrainTerror;
 
             if (_debug)
             {
@@ -99,7 +99,7 @@ namespace ThreeDSudoku.Server.Core
                     for (int col = 0; col < 3; col++)
                     {
                         var pos = new CellPosition(face, row, col);
-                        var cell = _cube.GetCell(pos);
+                        var cell = _cube.getCell(pos);
 
                         if (cell.getNumber() == 0)
                         {
@@ -118,7 +118,7 @@ namespace ThreeDSudoku.Server.Core
         private HashSet<int> GetPossibleValues(CellPosition pos)
         {
             var possible = new HashSet<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var cell = _cube.GetCell(pos);
+            var cell = _cube.getCell(pos);
 
             for (int n = 1; n <= 9; n++)
             {
@@ -201,8 +201,8 @@ namespace ThreeDSudoku.Server.Core
             // Edges
             foreach (var edgePair in CubeTopology.Edges)
             {
-                var cellA = _cube.GetCell(edgePair[0]);
-                var cellB = _cube.GetCell(edgePair[1]);
+                var cellA = _cube.getCell(edgePair[0]);
+                var cellB = _cube.getCell(edgePair[1]);
 
                 int valA = cellA.getNumber();
                 int valB = cellB.getNumber();
@@ -238,9 +238,9 @@ namespace ThreeDSudoku.Server.Core
             // Corners
             foreach (var cornerTriple in CubeTopology.Corners)
             {
-                var cellA = _cube.GetCell(cornerTriple[0]);
-                var cellB = _cube.GetCell(cornerTriple[1]);
-                var cellC = _cube.GetCell(cornerTriple[2]);
+                var cellA = _cube.getCell(cornerTriple[0]);
+                var cellB = _cube.getCell(cornerTriple[1]);
+                var cellC = _cube.getCell(cornerTriple[2]);
 
                 int valA = cellA.getNumber();
                 int valB = cellB.getNumber();
@@ -333,7 +333,7 @@ namespace ThreeDSudoku.Server.Core
 
         private void PlaceNumber(CellPosition pos, int value)
         {
-            _cube.GetCell(pos).setNumber(value);
+            _cube.getCell(pos).setNumber(value);
             _candidates.Remove(pos);
 
             if (_debug)

@@ -22,7 +22,7 @@ namespace ThreeDSudoku.Server.Core
             }
         }
 
-        public Cell GetCell(CellPosition position)
+        public Cell getCell(CellPosition position)
         {
             // Transforming the face to integer
             int faceIndex = (int)position.face;

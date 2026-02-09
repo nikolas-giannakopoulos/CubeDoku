@@ -28,7 +28,7 @@ namespace ThreeDSudoku.Server.Core
         public SolvabilityResult()
         {
             IsSolvable = false;
-            Difficulty = Difficulty.Impossible;
+            Difficulty = Difficulty.BrainTerror;  // Default για unsolvable
             StepsRequired = 0;
             TechniquesUsed = new Dictionary<string, int>();
         }

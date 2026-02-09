@@ -32,7 +32,7 @@ namespace ThreeDSudoku.Server.Core
         }
 
         // Cell type identification for strategic removal
-        public CellType GetCellType()
+        public CellType getCellType()
         {
             if (row == 1 && column == 1) 
                 return CellType.Center;

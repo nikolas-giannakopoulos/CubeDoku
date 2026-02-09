@@ -88,7 +88,7 @@ namespace ThreeDSudoku.Server.Core
                 {
                     for (int col = 0; col < 3; col++)
                     {
-                        cells.Add(cube.GetCell(new CellPosition(face, row, col)));
+                        cells.Add(cube.getCell(new CellPosition(face, row, col)));
                     }
                 }
             }
@@ -120,8 +120,8 @@ namespace ThreeDSudoku.Server.Core
                     for (int col = 0; col < 3; col++)
                     {
                         var pos = new CellPosition(face, row, col);
-                        var originalCell = original.GetCell(pos);
-                        var cloneCell = clone.GetCell(pos);
+                        var originalCell = original.getCell(pos);
+                        var cloneCell = clone.getCell(pos);
                         cloneCell.setNumber(originalCell.getNumber());
                     }
                 }
@@ -133,11 +133,7 @@ namespace ThreeDSudoku.Server.Core
         /// <summary>
         /// Δημιουργεί puzzle που λύνεται με λογική (no guessing) και έχει συγκεκριμένο difficulty
         /// </summary>
-        public Cube GenerateLogicallySolvablePuzzle(
-            Difficulty targetDifficulty, 
-            out int clueCount, 
-            out SolvabilityResult solvability,
-            int maxAttempts = 50)
+        public Cube GeneratePuzzle(Difficulty targetDifficulty, int maxAttempts = 50)
         {
             Console.WriteLine($"🎯 Generating {targetDifficulty} puzzle (max {maxAttempts} attempts)...");
 
@@ -188,12 +184,9 @@ namespace ThreeDSudoku.Server.Core
                 throw new Exception($"Failed to generate {targetDifficulty} puzzle after {maxAttempts} attempts");
             }
 
-            clueCount = bestClueCount;
-            solvability = bestResult;
-
-            Console.WriteLine($"✅ Generated {solvability.Difficulty} puzzle with {clueCount} clues");
-            Console.WriteLine($"   Steps required: {solvability.StepsRequired}");
-            foreach (var tech in solvability.TechniquesUsed)
+            Console.WriteLine($"✅ Generated {bestResult.Difficulty} puzzle with {bestClueCount} clues");
+            Console.WriteLine($"   Steps required: {bestResult.StepsRequired}");
+            foreach (var tech in bestResult.TechniquesUsed)
             {
                 Console.WriteLine($"   - {tech.Key}: {tech.Value} times");
             }
@@ -230,8 +223,8 @@ namespace ThreeDSudoku.Server.Core
                     for (int col = 0; col < 3; col++)
                     {
                         var pos = new CellPosition(face, row, col);
-                        var cell = puzzleCube.GetCell(pos);
-                        var type = pos.GetCellType();
+                        var cell = puzzleCube.getCell(pos);
+                        var type = pos.getCellType();
 
                         if (type == CellType.Center) centers.Add(cell);
                         else if (type == CellType.Edge) edges.Add(cell);

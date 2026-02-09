@@ -24,7 +24,7 @@ namespace ThreeDSudoku.Server.Core
                     if (face == 6) return null; // Τέλος Κύβου
                 }
             }
-            return cube.GetCell(new CellPosition((CubeFaces)face, row, col));
+            return cube.getCell(new CellPosition((CubeFaces)face, row, col));
         }
 
         public List<Cell> IndividualChecker(Cell cell, Cube cube)
@@ -69,7 +69,7 @@ namespace ThreeDSudoku.Server.Core
                 CellPosition[] pairedPositions = GetPairedCells(cellPos);
                 if (pairedPositions != null && pairedPositions.Length == 1)
                 {
-                    Cell pairedCell = cube.GetCell(pairedPositions[0]);
+                    Cell pairedCell = cube.getCell(pairedPositions[0]);
                     int val1 = cell.getNumber();
                     int val2 = pairedCell.getNumber();
 
@@ -113,8 +113,8 @@ namespace ThreeDSudoku.Server.Core
                 CellPosition[] pairedPositions = GetPairedCells(cellPos);
                 if (pairedPositions != null && pairedPositions.Length == 2)
                 {
-                    Cell pairedCell1 = cube.GetCell(pairedPositions[0]);
-                    Cell pairedCell2 = cube.GetCell(pairedPositions[1]);
+                    Cell pairedCell1 = cube.getCell(pairedPositions[0]);
+                    Cell pairedCell2 = cube.getCell(pairedPositions[1]);
                     
                     int val1 = cell.getNumber();
                     int val2 = pairedCell1.getNumber();
@@ -176,7 +176,7 @@ namespace ThreeDSudoku.Server.Core
                 if (pairedPos != null && pairedPos.Length == 1)
                 {
                     cellsToCheck.Add(cell);
-                    cellsToCheck.Add(cube.GetCell(pairedPos[0]));
+                    cellsToCheck.Add(cube.getCell(pairedPos[0]));
                 }
             }
             else if (!(row == 1 && col == 1))
@@ -186,8 +186,8 @@ namespace ThreeDSudoku.Server.Core
                 if (pairedPos != null && pairedPos.Length == 2)
                 {
                     cellsToCheck.Add(cell);
-                    cellsToCheck.Add(cube.GetCell(pairedPos[0]));
-                    cellsToCheck.Add(cube.GetCell(pairedPos[1]));
+                    cellsToCheck.Add(cube.getCell(pairedPos[0]));
+                    cellsToCheck.Add(cube.getCell(pairedPos[1]));
                 }
             }
 
@@ -234,7 +234,7 @@ namespace ThreeDSudoku.Server.Core
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    cells.Add(cube.GetCell(new CellPosition(face, i, j)));
+                    cells.Add(cube.getCell(new CellPosition(face, i, j)));
                 }
             }
             return cells;
@@ -320,8 +320,8 @@ namespace ThreeDSudoku.Server.Core
         {
             foreach (var edgePair in CubeTopology.Edges)
             {
-                var cellA = cube.GetCell(edgePair[0]);
-                var cellB = cube.GetCell(edgePair[1]);
+                var cellA = cube.getCell(edgePair[0]);
+                var cellB = cube.getCell(edgePair[1]);
 
                 int valA = cellA.getNumber();
                 int valB = cellB.getNumber();
@@ -350,9 +350,9 @@ namespace ThreeDSudoku.Server.Core
         {
             foreach (var cornerTriple in CubeTopology.Corners)
             {
-                var cellA = cube.GetCell(cornerTriple[0]);
-                var cellB = cube.GetCell(cornerTriple[1]);
-                var cellC = cube.GetCell(cornerTriple[2]);
+                var cellA = cube.getCell(cornerTriple[0]);
+                var cellB = cube.getCell(cornerTriple[1]);
+                var cellC = cube.getCell(cornerTriple[2]);
 
                 int valA = cellA.getNumber();
                 int valB = cellB.getNumber();
@@ -389,7 +389,7 @@ namespace ThreeDSudoku.Server.Core
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    var compareCell = cube.GetCell(new CellPosition(currentFace, i, j));
+                    var compareCell = cube.getCell(new CellPosition(currentFace, i, j));
                     // Προσοχή: Ελέγχουμε αν είναι διαφορετικό κελί πριν συγκρίνουμε τιμή
                     if (compareCell != cell && compareCell.getNumber() == currentNumber)
                     {
@@ -406,7 +406,7 @@ namespace ThreeDSudoku.Server.Core
             {
                 for (int c = 0; c < 3; c++)
                 {
-                    if (cube.GetCell(new CellPosition(face, r, c)).getNumber() == numberToCheck) return true;
+                    if (cube.getCell(new CellPosition(face, r, c)).getNumber() == numberToCheck) return true;
                 }
             }
             return false;

@@ -73,7 +73,7 @@ namespace ThreeDSudoku.Server.Core
                     for (int column = 0; column < 3; column++)
                     {
                         var pos = new CellPosition(face, row, column);
-                        var cell = cube.GetCell(pos);
+                        var cell = cube.getCell(pos);
 
                         // If cell is filled, skip
                         if (cell.getNumber() != 0) continue;

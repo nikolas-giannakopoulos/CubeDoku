@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("3D-Sudoku.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+37ccf7f96f1129cc371e4edf1a4467d694563a69")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+361b6f5f2e235760dea6a4839742d42e3d309d19")]
 [assembly: System.Reflection.AssemblyProductAttribute("3D-Sudoku.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("3D-Sudoku.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

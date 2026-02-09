@@ -29,7 +29,6 @@ C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\st
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\3D-Sudok.A60AC86A.Up2Date
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\3D-Sudoku.Server.dll
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\refint\3D-Sudoku.Server.dll
@@ -37,3 +36,4 @@ C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\3D
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\3D-Sudoku.Server.genruntimeconfig.cache
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\ref\3D-Sudoku.Server.dll
 C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\3D-Sudoku.Server.sourcelink.json
+C:\Users\Nikolas\Desktop\Projects\3D-Sudoku\3D-Sudoku.Server\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

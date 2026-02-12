@@ -6,5 +6,6 @@ namespace ThreeDSudoku.Server.Models
         public int Row { get; set;}
         public int Column { get; set; }
         public string State { get; set; } // Default, Error, Completed
+        public int Value { get; set; }
     }
 }

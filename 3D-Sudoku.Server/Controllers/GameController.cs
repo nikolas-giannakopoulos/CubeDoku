@@ -38,20 +38,18 @@ namespace ThreeDSudoku.Server.Controllers
                         _cachedPuzzleDay = todaySeed;
                     }
 
-                    // Create Classic puzzle if not not already
                     if(difficulty == "Classic" && _classicPuzzle == null)
                     {
                         var generator = new PuzzleGenerator(todaySeed);
-                        var classicCube = generator.GeneratePuzzle(Difficulty.Classic);
-                        _classicPuzzle = ConvertToStartResponse(classicCube, "Classic");
+                        var result = generator.GeneratePuzzle(Difficulty.Classic);
+                        _classicPuzzle = ConvertToStartResponse(result.Puzzle, "Classic", result.Steps);
                     }
 
-                    // Create BrainTerror puzzle if not not already
                     if(difficulty == "BrainTerror" && _brainterrorPuzzle == null)
                     {
                         var generator = new PuzzleGenerator(todaySeed);
-                        var brainterrorCube = generator.GeneratePuzzle(Difficulty.BrainTerror);
-                        _brainterrorPuzzle = ConvertToStartResponse(brainterrorCube, "BrainTerror");
+                        var result = generator.GeneratePuzzle(Difficulty.BrainTerror);
+                        _brainterrorPuzzle = ConvertToStartResponse(result.Puzzle, "BrainTerror", result.Steps);
                     }
 
                     var response = difficulty == "Classic" ? _classicPuzzle : _brainterrorPuzzle ;
@@ -69,6 +67,7 @@ namespace ThreeDSudoku.Server.Controllers
         public ActionResult<MoveResponse> ValidateMove([FromBody] MoveRequest request)
         {
             try
+         
             {
                 Cube cube = new Cube();
                 int[] values = request.CurrentState;
@@ -93,6 +92,12 @@ namespace ThreeDSudoku.Server.Controllers
                 newCell.setNumber(request.Value);
                 List<Cell> updatedCells = checker.IndividualChecker(newCell, cube);
 
+                // Ensure the modified cell is always returned, even if valid and not completing anything
+                if (!updatedCells.Contains(newCell))
+                {
+                    updatedCells.Add(newCell);
+                }
+
                 var response = ConvertToMoveResponse(updatedCells, cube);
                 return Ok(response);
             }
@@ -103,7 +108,7 @@ namespace ThreeDSudoku.Server.Controllers
         }
         
         // Converting lockedCells from 'Cells' to 'JSON'
-        private StartResponse ConvertToStartResponse(Cube cube, string difficulty)
+        private StartResponse ConvertToStartResponse(Cube cube, string difficulty, List<LogicalStep> steps)
         {
             var lockedCells = new List<CellDTO>();
 
@@ -135,7 +140,8 @@ namespace ThreeDSudoku.Server.Controllers
             {
                 //GameId = gameId,
                 GameId = 5,
-                LockedCells = lockedCells
+                LockedCells = lockedCells,
+                LogicalSteps = steps
             };
         }
 
@@ -150,7 +156,8 @@ namespace ThreeDSudoku.Server.Controllers
                     Face = cell.getPosition().face.ToString(),
                     Row = cell.getPosition().row,
                     Column = cell.getPosition().column,
-                    State = cell.getColor().ToString()
+                    State = cell.getColor().ToString(),
+                    Value = cell.getNumber()
                 };
                 updatedCells.Add(cellDTO);
             }

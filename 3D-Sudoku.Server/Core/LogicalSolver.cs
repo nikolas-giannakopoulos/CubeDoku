@@ -20,6 +20,8 @@ namespace ThreeDSudoku.Server.Core
             InitializeCandidates();
         }
 
+        public SolvabilityResult Result => _result;
+
         public SolvabilityResult Solve()
         {
             bool progress = true;
@@ -152,8 +154,7 @@ namespace ThreeDSudoku.Server.Core
 
             foreach (var (pos, value) in toPlace)
             {
-                PlaceNumber(pos, value);
-                IncrementTechnique("Naked Single");
+                PlaceNumber(pos, value, "Naked Single");
                 foundAny = true;
             }
 
@@ -184,8 +185,7 @@ namespace ThreeDSudoku.Server.Core
 
                     if (possiblePositions.Count == 1)
                     {
-                        PlaceNumber(possiblePositions[0], num);
-                        IncrementTechnique("Hidden Single");
+                        PlaceNumber(possiblePositions[0], num, "Hidden Single");
                         foundAny = true;
                     }
                 }
@@ -215,7 +215,7 @@ namespace ThreeDSudoku.Server.Core
                         if (_candidates[edgePair[1]].Count > 1)
                         {
                             _candidates[edgePair[1]] = new HashSet<int> { required };
-                            IncrementTechnique("Edge 12-Sum");
+                            PlaceNumber(edgePair[1], required, $"Edge 12-Sum: 12 - {valA} = {required}");
                             foundAny = true;
                         }
                     }
@@ -228,7 +228,7 @@ namespace ThreeDSudoku.Server.Core
                         if (_candidates[edgePair[0]].Count > 1)
                         {
                             _candidates[edgePair[0]] = new HashSet<int> { required };
-                            IncrementTechnique("Edge 12-Sum");
+                            PlaceNumber(edgePair[0], required, $"Edge 12-Sum: 12 - {valB} = {required}");
                             foundAny = true;
                         }
                     }
@@ -258,7 +258,15 @@ namespace ThreeDSudoku.Server.Core
                         if (_candidates[emptyPos].Count > 1)
                         {
                             _candidates[emptyPos] = new HashSet<int> { required };
-                            IncrementTechnique("Corner 12-Sum");
+
+                            // Determine which values are filled for the reason string
+                            var filledValues = new List<int>();
+                            if (valA > 0) filledValues.Add(valA);
+                            if (valB > 0) filledValues.Add(valB);
+                            if (valC > 0) filledValues.Add(valC);
+                            
+                            string reason = $"Corner 12-Sum: 12 - ({string.Join("+", filledValues)}) = {required}";
+                            PlaceNumber(emptyPos, required, reason);
                             foundAny = true;
                         }
                     }
@@ -331,14 +339,23 @@ namespace ThreeDSudoku.Server.Core
 
         #region Helper Methods
 
-        private void PlaceNumber(CellPosition pos, int value)
+        private void PlaceNumber(CellPosition pos, int value, string reason)
         {
             _cube.getCell(pos).setNumber(value);
             _candidates.Remove(pos);
 
+            var step = new LogicalStep
+            {
+                Position = pos,
+                Value = value,
+                Reason = reason
+            };
+            _result.Steps.Add(step);
+            IncrementTechnique(reason);
+
             if (_debug)
             {
-                Console.WriteLine($"    Placed {value} at {pos.face} [{pos.row},{pos.column}]");
+                Console.WriteLine($"    {step}");
             }
 
             // Update candidates for affected cells

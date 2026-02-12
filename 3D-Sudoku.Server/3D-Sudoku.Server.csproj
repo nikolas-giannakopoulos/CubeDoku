@@ -7,7 +7,7 @@
     <RootNamespace>_3D_Sudoku.Server</RootNamespace>
     <SpaRoot>..\3d-sudoku.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:64809</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://127.0.0.1:5173</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,5 +22,11 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
+
+  <Target Name="CleanupZombieProcesses" BeforeTargets="Build;PrepareForBuild;PreBuildEvent">
+    <Message Importance="high" Text="[3D-Sudoku] Killing any lingering backend or node processes to free ports..." />
+    <Exec Command="taskkill /F /IM 3D-Sudoku.Server.exe /FI &quot;STATUS eq RUNNING&quot; 2&gt;nul || exit 0" IgnoreExitCode="true" />
+    <Exec Command="taskkill /F /IM node.exe /FI &quot;STATUS eq RUNNING&quot; 2&gt;nul || exit 0" IgnoreExitCode="true" />
+  </Target>
 
 </Project>

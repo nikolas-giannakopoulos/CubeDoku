@@ -3,9 +3,9 @@ namespace ThreeDSudoku.Server.Core
     // Represents the position of a cell in the cube
     public class CellPosition
     {
-        public CubeFaces face;
-        public int row;
-        public int column;
+        public CubeFaces face { get; set; }
+        public int row { get; set; }
+        public int column { get; set; }
 
         public CellPosition(CubeFaces face, int row, int column)
         {

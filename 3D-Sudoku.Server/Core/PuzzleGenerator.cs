@@ -133,13 +133,21 @@ namespace ThreeDSudoku.Server.Core
         /// <summary>
         /// Δημιουργεί puzzle που λύνεται με λογική (no guessing) και έχει συγκεκριμένο difficulty
         /// </summary>
-        public Cube GeneratePuzzle(Difficulty targetDifficulty, int maxAttempts = 50)
+        /// <summary>
+        /// Δημιουργεί puzzle που λύνεται με λογική (no guessing) και έχει συγκεκριμένο difficulty
+        /// </summary>
+        public (Cube Puzzle, List<LogicalStep> Steps) GeneratePuzzle(Difficulty targetDifficulty, int maxAttempts = 50)
         {
             Console.WriteLine($"🎯 Generating {targetDifficulty} puzzle (max {maxAttempts} attempts)...");
 
             Cube bestPuzzle = null;
             int bestClueCount = 54;
             SolvabilityResult bestResult = null;
+            
+            // Set target clues based on difficulty
+            // Classic: ~25 clues (Easier)
+            // BrainTerror: As few as possible (Hard)
+            int targetClues = targetDifficulty == Difficulty.Classic ? 25 : 0;
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
@@ -148,7 +156,7 @@ namespace ThreeDSudoku.Server.Core
                 var tempGenerator = new PuzzleGenerator(attemptSeed);
 
                 // Δημιούργησε unique puzzle με στρατηγική αφαίρεση
-                var puzzle = tempGenerator.GenerateUniquePuzzleStrategic(out int tempClues);
+                var puzzle = tempGenerator.GenerateUniquePuzzleStrategic(targetClues, out int tempClues);
 
                 // Έλεγξε αν λύνεται λογικά
                 var testCube = CloneCube(puzzle);
@@ -164,13 +172,29 @@ namespace ThreeDSudoku.Server.Core
                     }
 
                     // Κράτα το καλύτερο (με λιγότερα clues στο target difficulty)
-                    if (result.Difficulty == targetDifficulty && tempClues < bestClueCount)
+                    // For classic, we want to be close to target, not necessarily lowest
+                    bool isBetter = false;
+                    
+                    if (targetDifficulty == Difficulty.Classic)
                     {
-                        bestPuzzle = puzzle;
-                        bestClueCount = tempClues;
-                        bestResult = result;
+                         // For Classic, we modify the selection logic:
+                         // Any solvable puzzle at Classic difficulty is good if we hit our target (which strategic generation handles)
+                         // But if we have multiple, maybe closer to 25 is better? 
+                         // Strategic generation stops AT 25, so tempClues will be >= 25.
+                         // We prefer the one with fewer clues that is still >= 25 (closest to target) 
+                         // actually GenerateUniquePuzzleStrategic stops when <= targetClues. 
+                         
+                         if (bestPuzzle == null) isBetter = true;
+                         else if (Math.Abs(tempClues - targetClues) < Math.Abs(bestClueCount - targetClues)) isBetter = true;
                     }
-                    else if (bestPuzzle == null && result.Difficulty <= targetDifficulty)
+                    else
+                    {
+                        // Standard behavior for Hard: Fewer clues is better
+                        if (bestPuzzle == null) isBetter = true;
+                        else if (result.Difficulty == targetDifficulty && tempClues < bestClueCount) isBetter = true;
+                    }
+
+                    if (isBetter)
                     {
                         bestPuzzle = puzzle;
                         bestClueCount = tempClues;
@@ -191,13 +215,20 @@ namespace ThreeDSudoku.Server.Core
                 Console.WriteLine($"   - {tech.Key}: {tech.Value} times");
             }
 
-            return bestPuzzle;
+            // Print the logical solving steps for the final puzzle
+            Console.WriteLine("\n🧩 Logical Solving Steps for the Generated Puzzle:");
+            var finalTestCube = CloneCube(bestPuzzle);
+            var stepLogger = new LogicalSolver(finalTestCube, debug: true);
+            stepLogger.Solve();
+            Console.WriteLine("--------------------------------------------------\n");
+
+            return (bestPuzzle, stepLogger.Result.Steps);
         }
 
         /// <summary>
         /// Στρατηγική αφαίρεση: Centers → Edges → Corners
         /// </summary>
-        private Cube GenerateUniquePuzzleStrategic(out int clueCount)
+        private Cube GenerateUniquePuzzleStrategic(int targetClues, out int clueCount)
         {
             // 1. Δημιούργησε λυμένο κύβο
             Cube solvedCube = new Cube();
@@ -244,8 +275,15 @@ namespace ThreeDSudoku.Server.Core
             orderedCells.AddRange(corners);
 
             int removed = 0;
+            // 54 total cells
             foreach (var cell in orderedCells)
             {
+                // Check if we reached target clues
+                if (targetClues > 0 && (54 - removed) <= targetClues)
+                {
+                    break;
+                }
+
                 int originalValue = cell.getNumber();
                 cell.setNumber(0);
 

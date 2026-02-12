@@ -16,6 +16,21 @@ namespace ThreeDSudoku.Server.Core
     }
 
     /// <summary>
+    /// Represents a single logical step in solving the puzzle
+    /// </summary>
+    public class LogicalStep
+    {
+        public CellPosition Position { get; set; }
+        public int Value { get; set; }
+        public string Reason { get; set; }
+
+        public override string ToString()
+        {
+            return $"[{Position.face} {Position.row},{Position.column}]: {Value} - {Reason}";
+        }
+    }
+
+    /// <summary>
     /// Αποθηκεύει το αποτέλεσμα της λογικής επίλυσης
     /// </summary>
     public class SolvabilityResult
@@ -24,6 +39,7 @@ namespace ThreeDSudoku.Server.Core
         public Difficulty Difficulty { get; set; }
         public int StepsRequired { get; set; }
         public Dictionary<string, int> TechniquesUsed { get; set; }
+        public List<LogicalStep> Steps { get; set; }
 
         public SolvabilityResult()
         {
@@ -31,6 +47,7 @@ namespace ThreeDSudoku.Server.Core
             Difficulty = Difficulty.BrainTerror;  // Default για unsolvable
             StepsRequired = 0;
             TechniquesUsed = new Dictionary<string, int>();
+            Steps = new List<LogicalStep>();
         }
     }
 }

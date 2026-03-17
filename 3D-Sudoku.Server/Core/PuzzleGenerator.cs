@@ -143,6 +143,10 @@ namespace ThreeDSudoku.Server.Core
             Cube bestPuzzle = null;
             int bestClueCount = 54;
             SolvabilityResult bestResult = null;
+            // Fallback: any solvable puzzle (even if difficulty doesn't match target)
+            Cube fallbackPuzzle = null;
+            int fallbackClueCount = 54;
+            SolvabilityResult fallbackResult = null;
             
             // Set target clues based on difficulty
             // Classic: ~25 clues (Easier)
@@ -162,6 +166,14 @@ namespace ThreeDSudoku.Server.Core
                 var testCube = CloneCube(puzzle);
                 var logicalSolver = new LogicalSolver(testCube);
                 var result = logicalSolver.Solve();
+
+                // Keep any solvable puzzle as fallback
+                if (result.IsSolvable && fallbackPuzzle == null)
+                {
+                    fallbackPuzzle = puzzle;
+                    fallbackClueCount = tempClues;
+                    fallbackResult = result;
+                }
 
                 if (result.IsSolvable && result.Difficulty <= targetDifficulty)
                 {
@@ -205,7 +217,18 @@ namespace ThreeDSudoku.Server.Core
 
             if (bestPuzzle == null)
             {
-                throw new Exception($"Failed to generate {targetDifficulty} puzzle after {maxAttempts} attempts");
+                // Fallback: use the best solvable puzzle even if difficulty doesn't match
+                if (fallbackPuzzle != null)
+                {
+                    Console.WriteLine($"⚠️ No exact {targetDifficulty} puzzle found. Using fallback ({fallbackResult!.Difficulty}) with {fallbackClueCount} clues.");
+                    bestPuzzle = fallbackPuzzle;
+                    bestClueCount = fallbackClueCount;
+                    bestResult = fallbackResult;
+                }
+                else
+                {
+                    throw new Exception($"Failed to generate any solvable puzzle after {maxAttempts} attempts");
+                }
             }
 
             Console.WriteLine($"✅ Generated {bestResult.Difficulty} puzzle with {bestClueCount} clues");

@@ -1,16 +1,141 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
+import { LuChevronLeft } from 'react-icons/lu';
+import './ProfileModal.css';
+
+interface DifficultyStats {
+    games: number;
+    bestScore: number;
+    bestTime: number;
+    totalMistakes: number;
+}
+
+interface StatsData {
+    totalGames: number;
+    classic: DifficultyStats;
+    brainTerror: DifficultyStats;
+}
+
 export interface ProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
     className?: string;
+    onLogout?: () => void;
+    onSettings?: () => void;
 }
 
-export const ProfileModal = ({ isOpen, onClose, className }: ProfileModalProps) => {
+const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+export const ProfileModal = ({ isOpen, onClose, className, onLogout, onSettings }: ProfileModalProps) => {
+    const { user, logout, token } = useAuth();
+    const [showStats, setShowStats] = useState(false);
+    const [stats, setStats] = useState<StatsData | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setShowStats(false);
+            return;
+        }
+        if (showStats && !stats && !loading) {
+            setLoading(true);
+            const headers: Record<string, string> = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            fetch('/api/user/stats', { headers })
+                .then(r => r.ok ? r.json() : null)
+                .then(data => setStats(data))
+                .catch(() => setStats(null))
+                .finally(() => setLoading(false));
+        }
+    }, [isOpen, showStats, stats, loading, token]);
+
+    const handleLogout = () => {
+        logout();
+        onLogout?.();
+        onClose();
+    };
+
     if (!isOpen) return null;
+
+    if (showStats) {
+        return (
+            <div className="profile-stats-overlay" onClick={onClose}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <button className="modal-back-btn" onClick={() => setShowStats(false)} aria-label="Back to profile menu">
+                            <LuChevronLeft size={20} />
+                        </button>
+                        <h3>My Stats</h3>
+                    </div>
+                    {user && <p className="modal-username">{user.username}</p>}
+                    
+                    {loading ? (
+                        <p className="modal-loading">Loading stats…</p>
+                    ) : stats ? (
+                        <div className="stats-container">
+                            <p className="stats-total">Total Games: <strong>{stats.totalGames}</strong></p>
+                            
+                            <div className="stats-grid">
+                                <div className="difficulty-stats">
+                                    <h4>Classic</h4>
+                                    <div className="stat-item">
+                                        <span>Games:</span>
+                                        <strong>{stats.classic.games}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Best Score:</span>
+                                        <strong>{stats.classic.bestScore}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Best Time:</span>
+                                        <strong>{formatTime(stats.classic.bestTime)}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Total Mistakes:</span>
+                                        <strong>{stats.classic.totalMistakes}</strong>
+                                    </div>
+                                </div>
+
+                                <div className="difficulty-stats">
+                                    <h4>Brain Terror</h4>
+                                    <div className="stat-item">
+                                        <span>Games:</span>
+                                        <strong>{stats.brainTerror.games}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Best Score:</span>
+                                        <strong>{stats.brainTerror.bestScore}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Best Time:</span>
+                                        <strong>{formatTime(stats.brainTerror.bestTime)}</strong>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Total Mistakes:</span>
+                                        <strong>{stats.brainTerror.totalMistakes}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="modal-loading">No stats yet. Play a game to get started!</p>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className={className} onClick={onClose}>
-            <div className="modal-buttons"><p onClick={onClose}>My Stats </p></div>
+        <div className={className}>
+            <div className="modal-buttons"><p onClick={() => setShowStats(true)}>My Stats</p></div>
             <div className="modal-divider"></div>
-            <div className="modal-buttons"><p onClick={onClose}>Log Out </p></div>
+            <div className="modal-buttons"><p onClick={() => { onSettings?.(); onClose(); }}>Settings</p></div>
+            <div className="modal-divider"></div>
+            <div className="modal-buttons"><p onClick={handleLogout}>Log Out</p></div>
         </div>
     );
 };

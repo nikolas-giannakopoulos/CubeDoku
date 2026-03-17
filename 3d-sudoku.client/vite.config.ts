@@ -34,8 +34,16 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     }
 }
 
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-    env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7004';
+// Prefer HTTPS backend target to avoid auth header loss on HTTP->HTTPS redirects.
+const target = env.ASPNETCORE_URLS
+    ? (env.ASPNETCORE_URLS.split(';').find(u => u.startsWith('https://'))
+        ?? env.ASPNETCORE_URLS.split(';').find(u => u.startsWith('http://')))
+        ?.replace('localhost', '127.0.0.1')
+    : env.ASPNETCORE_HTTPS_PORT
+        ? `https://127.0.0.1:${env.ASPNETCORE_HTTPS_PORT}`
+        : 'http://127.0.0.1:5053';
+
+console.log(`Vite Proxy Target: ${target}`);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -46,13 +54,20 @@ export default defineConfig({
         }
     },
     server: {
+        host: '127.0.0.1', // Force IPv4 to avoid Windows IPv6 binding issues
         proxy: {
             '^/weatherforecast': {
                 target,
                 secure: false
+            },
+            '^/api': {
+                target,
+                secure: false
             }
         },
-        port: parseInt(env.DEV_SERVER_PORT || '64809'),
+        port: parseInt(env.DEV_SERVER_PORT || '5173'),
+        strictPort: true,
+        cors: true,
         https: {
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),

@@ -1,0 +1,110 @@
+.howto-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 350;
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.howto-modal {
+    position: relative;
+    width: min(840px, 100%);
+    max-height: min(88vh, 920px);
+    overflow-y: auto;
+    background: rgba(22, 22, 22, 0.94);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.45);
+    padding: 24px;
+}
+
+.howto-close-btn {
+    position: sticky;
+    top: 0;
+    margin-left: auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-border);
+}
+
+.howto-modal h2 {
+    margin: 8px 0 8px;
+    font-size: 1.45rem;
+}
+
+.howto-intro {
+    color: var(--color-text-secondary);
+    margin: 0 0 16px;
+    line-height: 1.6;
+}
+
+.howto-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.howto-section h3 {
+    margin: 0 0 8px;
+    color: var(--color-text-primary);
+}
+
+.howto-section p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.howto-shot-slot {
+    margin-top: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.28);
+    border-radius: 12px;
+    min-height: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    padding: 14px;
+}
+
+.howto-tips {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    color: var(--color-text-secondary);
+}
+
+.howto-tips li {
+    margin: 6px 0;
+}
+
+@media (max-width: 768px) {
+    .howto-overlay {
+        padding: 12px;
+    }
+
+    .howto-modal {
+        padding: 16px;
+        max-height: 92vh;
+    }
+
+    .howto-modal h2 {
+        font-size: 1.2rem;
+    }
+
+    .howto-shot-slot {
+        min-height: 92px;
+        font-size: 0.82rem;
+    }
+}

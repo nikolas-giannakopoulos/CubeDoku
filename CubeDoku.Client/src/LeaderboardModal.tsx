@@ -1,0 +1,152 @@
+import { useEffect, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import { useAuth } from './context/AuthContext';
+import './WelcomeModal.css';
+
+interface LeaderboardEntry {
+    username: string;
+    difficulty: string;
+    puzzleDate: string;
+    score: number;
+    durationSeconds: number;
+    mistakes: number;
+}
+
+interface LeaderboardModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    defaultTab?: 'Classic' | 'BrainTerror';
+    pinnedEntry?: LeaderboardEntry | null;
+}
+
+interface TokenClaims {
+    unique_name?: string;
+    [key: string]: unknown;
+}
+
+const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+export const LeaderboardModal = ({
+    isOpen,
+    onClose,
+    defaultTab = 'Classic',
+    pinnedEntry = null
+}: LeaderboardModalProps) => {
+    const { user } = useAuth();
+    const [tab, setTab] = useState<'Classic' | 'BrainTerror'>('Classic');
+    const [allData, setAllData] = useState<LeaderboardEntry[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Fallback to decode username from token if user context isn't loaded yet
+    const getLoggedInUsername = () => {
+        if (user?.username) return user.username;
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const decoded = jwtDecode<TokenClaims>(token);
+                const claimName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
+
+                if (typeof claimName === 'string') return claimName;
+                if (typeof decoded.unique_name === 'string') return decoded.unique_name;
+            }
+        } catch {
+            return null;
+        }
+        return null;
+    };
+
+    const loggedInUsername = getLoggedInUsername();
+
+    useEffect(() => {
+        setTab(defaultTab);
+    }, [defaultTab, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setLoading(true);
+        fetch('/api/user/leaderboard', { cache: 'no-store' })
+            .then(r => r.ok ? r.json() : [])
+            .then(data => setAllData(data))
+            .catch(() => setAllData([]))
+            .finally(() => setLoading(false));
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const rows = allData.filter(e => e.difficulty === tab);
+    const shouldPin = pinnedEntry && pinnedEntry.difficulty === tab;
+    const hasPinned = shouldPin && rows.some(e =>
+        e.username === pinnedEntry.username &&
+        e.difficulty === pinnedEntry.difficulty &&
+        e.puzzleDate === pinnedEntry.puzzleDate &&
+        e.score === pinnedEntry.score &&
+        e.durationSeconds === pinnedEntry.durationSeconds &&
+        e.mistakes === pinnedEntry.mistakes
+    );
+    const displayedRows = shouldPin && !hasPinned ? [pinnedEntry, ...rows] : rows;
+
+    return (
+        <div className="leaderboard-modal" onClick={onClose}>
+            <div className="leaderboard-content" onClick={e => e.stopPropagation()}>
+                <h2>Leaderboard</h2>
+
+                <div className="lb-tabs">
+                    <button
+                        className={`lb-tab${tab === 'Classic' ? ' active' : ''}`}
+                        onClick={() => setTab('Classic')}
+                    >
+                        Classic
+                    </button>
+                    <button
+                        className={`lb-tab${tab === 'BrainTerror' ? ' active' : ''}`}
+                        onClick={() => setTab('BrainTerror')}
+                    >
+                        Brain Terror
+                    </button>
+                </div>
+
+                {loading ? (
+                    <p className="lb-empty">Loading…</p>
+                ) : displayedRows.length === 0 ? (
+                    <p className="lb-empty">No scores yet. Be the first!</p>
+                ) : (
+                    <div className="leaderboard-table-wrap">
+                        <table className="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Player</th>
+                                    <th>Date</th>
+                                    <th>Score</th>
+                                    <th>Time</th>
+                                    <th>Mistakes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayedRows.map((entry, i) => {
+                                    const isPlayerRow = loggedInUsername && entry.username === loggedInUsername;
+                                    return (
+                                        <tr key={i} className={isPlayerRow ? 'player-row' : ''}>
+                                            <td>{i + 1}</td>
+                                            <td>{entry.username}</td>
+                                            <td>{entry.puzzleDate}</td>
+                                            <td>{entry.score}</td>
+                                            <td>{formatTime(entry.durationSeconds)}</td>
+                                            <td>{entry.mistakes}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                <button className="close-button" onClick={onClose}>Close</button>
+            </div>
+        </div>
+    );
+};

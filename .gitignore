@@ -17,4 +17,4 @@ obj/
 node_modules/
 dist/
 
-3D-Sudoku.Server/appsettings.Development.json
+CubeDoku.Server/appsettings.Development.json

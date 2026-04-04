@@ -61,20 +61,22 @@ type RevealRow = {
 
 const THEME_MATERIALS = {
     dark: {
-        cell: { color: 0x1A1D23, roughness: 0.1, metalness: 0.5, opacity: 0.98 },
-        locked: { color: 0x242931, roughness: 0.05, metalness: 0.7, opacity: 1 },
-        fail: { color: 0x6e0d0d, roughness: 0.2, metalness: 0.3, opacity: 1 },
-        base: { color: 0x0F1115, roughness: 0.05, metalness: 0.9 },
-        num_default: { color: 0xE5E4E2, roughness: 0.1, metalness: 1.0, emissive: 0x4a90e2, emissiveIntensity: 0.2 },
-        num_error: { color: 0xffffff, roughness: 0.1, metalness: 0.6 }
+        cell: { color: 0x1A1D23, roughness: 0.4, metalness: 0.3, opacity: 0.98 },
+        locked: { color: 0x242931, roughness: 0.4, metalness: 0.4, opacity: 1 },
+        fail: { color: 0x991f1f, roughness: 0.4, metalness: 0.3, opacity: 1 },
+        fail_dark: { color: 0x661414, roughness: 0.4, metalness: 0.3, opacity: 1 },
+        base: { color: 0x0F1115, roughness: 0.4, metalness: 0.5 },
+        num_default: { color: 0xE5E4E2, roughness: 0.2, metalness: 0.85, emissive: 0x000000, emissiveIntensity: 0 },
+        num_error: { color: 0xffffff, roughness: 0.2, metalness: 0.85 }
     },
     light: {
         cell: { color: 0xFDFBF9, roughness: 0.4, metalness: 0.05, opacity: 0.98 },
         locked: { color: 0xF3F1ED, roughness: 0.3, metalness: 0.1, opacity: 1 },
-        fail: { color: 0xC65C47, roughness: 0.4, metalness: 0.05, opacity: 1 },
+        fail: { color: 0xbf2626, roughness: 0.4, metalness: 0.05, opacity: 1 },
+        fail_dark: { color: 0x8a1b1b, roughness: 0.4, metalness: 0.05, opacity: 1 },
         base: { color: 0xE8DFD0, roughness: 0.6, metalness: 0.05 },
         num_default: { color: 0xC49A6C, roughness: 0.3, metalness: 0.8, emissive: 0x000000, emissiveIntensity: 0 },
-        num_error: { color: 0xFDFBF9, roughness: 0.4, metalness: 0.05 }
+        num_error: { color: 0xffffff, roughness: 0.3, metalness: 0.8 }
     }
 };
 
@@ -124,14 +126,16 @@ function SceneLighting() {
 
     return (
         <>
-            <ambientLight intensity={0.3} />
+            <ambientLight intensity={theme === 'dark' ? 0.9 : 0.6} />
             <directionalLight
-                position={[5, 8, 5]}
-                intensity={theme === 'dark' ? 1.5 : 0.8}
+                position={[10, 20, 15]}
+                intensity={theme === 'dark' ? 1.0 : 0.8}
                 castShadow
                 shadow-mapSize={[1024, 1024]}
             />
-            <pointLight position={[-10, -10, -10]} intensity={0.2} color="#ffffff" />
+            {theme === 'dark' && (
+                <hemisphereLight color={0x888899} groundColor={0x222222} intensity={0.5} />
+            )}
         </>
     );
 }
@@ -215,28 +219,28 @@ function CubeModel({
     useEffect(() => {
         if (isLoaded.current) return;
         
-        // Helper to safe-clone and replace material
-        const safeClone = (name: string) => {
+        const safeClone = (name: string, fallbackName?: string) => {
             if (materials[name]) {
-                const baseMat = materials[name].clone();
-                materials[name] = baseMat;
-                return true;
+                materials[name] = materials[name].clone();
+            } else if (fallbackName && materials[fallbackName]) {
+                 materials[name] = materials[fallbackName].clone();
+            } else {
+                 materials[name] = new THREE.MeshStandardMaterial();
             }
-            return false;
+            return true;
         };
 
         safeClone('Cell_Material');
-        safeClone('Cell_Locked');
-        safeClone('Cell_Fail');
-        safeClone('Cube_Base');
+        safeClone('Cell_Locked', 'Cell_Material');
+        safeClone('Cell_Fail', 'Cell_Material');
+        safeClone('Cell_Fail_Dark', 'Cell_Material'); // Explicit darker material for backplates
+        safeClone('Cube_Base', 'Frame_Material');
         
         // Clone number materials
         for (let i = 1; i <= 9; i++) {
             const matName = `Asset_Num_${i}_Mat`;
-            if (safeClone(matName)) {
-                // Add an "Error" variant for each number
-                materials[`${matName}_Error`] = materials[matName].clone();
-            }
+            safeClone(matName);
+            materials[`${matName}_Error`] = materials[matName].clone();
         }
         
         isLoaded.current = true;
@@ -249,6 +253,7 @@ function CubeModel({
         tweenMatDef(materials.Cell_Material, config.cell);
         tweenMatDef(materials.Cell_Locked, config.locked);
         tweenMatDef(materials.Cell_Fail, config.fail);
+        tweenMatDef(materials.Cell_Fail_Dark, config.fail_dark);
         tweenMatDef(materials.Cube_Base, config.base);
 
         for (let i = 1; i <= 9; i++) {
@@ -258,26 +263,7 @@ function CubeModel({
                 tweenMatDef(materials[`${matName}_Error`], config.num_error);
             }
         }
-
-        // --- Critical Link Fix ---
-        // Ensure the scene meshes actually use our cloned/updated materials
-        scene.traverse((obj: any) => {
-            if (obj.isMesh) {
-                if (obj.name.toLowerCase().includes('base')) {
-                    obj.material = materials.Cube_Base;
-                } else if (obj.name.includes('_')) { // Face cells
-                    const isLocked = lockedCellIds.has(obj.name);
-                    const cellData = mockBoardData.find(d => d.id === obj.name);
-                    const face = obj.name.split('_')[0];
-                    const isError = cellData?.state === 'Error' || conflictedFaces.has(face);
-                    
-                    if (isError) obj.material = materials.Cell_Fail;
-                    else if (isLocked) obj.material = materials.Cell_Locked;
-                    else obj.material = materials.Cell_Material;
-                }
-            }
-        });
-    }, [theme, materials, scene, lockedCellIds, mockBoardData, conflictedFaces]);
+    }, [theme, materials]);
 
     // Hide original assets
     useEffect(() => {
@@ -288,32 +274,70 @@ function CubeModel({
         });
     }, [nodes]);
 
+        // Track previous error states to detect newly errored cells
+    const prevErrorState = useRef<Record<string, boolean>>({});
+
     // Per-mesh material tracking
     useEffect(() => {
         if (!materials || !nodes) return;
 
         Object.keys(nodes).forEach((nodeName) => {
+            const node = nodes[nodeName];
+            if (nodeName === 'Cube') {
+                 if (node && (node as any).material) {
+                     (node as any).material = materials.Cube_Base;
+                 }
+                 return;
+            }
+
             const face = nodeName.split('_')[0];
             if (['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].some(f => nodeName.startsWith(f))) {
-                const node = nodes[nodeName];
+                
+                const isBackplate = nodeName.includes('_Back');
+                const cellId = isBackplate ? nodeName.substring(0, nodeName.indexOf('_Back')) : nodeName;
+                const cellData = mockBoardData.find(d => d.id === cellId);
+                
+                const isError = cellData?.state === 'Error' || conflictedFaces.has(face);
+
                 if (node && (node as any).material) {
-                    if (conflictedFaces.has(face)) {
-                        (node as any).material = materials.Cell_Fail;
+                    if (isError) {
+                        (node as any).material = isBackplate ? materials.Cell_Fail_Dark : materials.Cell_Fail;
+                    } else if (lockedCellIds.has(cellId)) {
+                        (node as any).material = isBackplate ? materials.Cube_Base : materials.Cell_Locked;
                     } else {
-                        const data = mockBoardData.find(d => d.id === nodeName);
-                        if (data?.state === 'Error') {
-                            (node as any).material = materials.Cell_Fail;
-                        } else if (lockedCellIds.has(nodeName)) {
-                            (node as any).material = materials.Cell_Locked;
-                        } else {
-                            (node as any).material = materials.Cell_Material;
-                        }
+                        (node as any).material = isBackplate ? materials.Cube_Base : materials.Cell_Material;
                     }
                 }
                 
                 // Store original position for bulletproof animations
                 if (!(node as any).userData.originalPosition) {
                     (node as any).userData.originalPosition = node.position.clone();
+                }
+
+                // Trigger popup animation once on entering error state (ONLY for Cells, not backplates)
+                if (!isBackplate) {
+                    const wasError = prevErrorState.current[nodeName] || false;
+                    if (isError && !wasError) {
+                        const orig = (node as any).userData.originalPosition as THREE.Vector3;
+                        if (orig) {
+                            const dummy = { offset: 0 };
+                            gsap.to(dummy, {
+                                offset: 0.04,
+                                duration: 0.15,
+                                yoyo: true,
+                                repeat: 1,
+                                ease: "power2.out",
+                                onUpdate: () => {
+                                    node.position.copy(orig);
+                                    node.translateZ(dummy.offset);
+                                },
+                                onComplete: () => {
+                                    node.position.copy(orig);
+                                }
+                            });
+                        }
+                    }
+                    prevErrorState.current[nodeName] = isError;
                 }
             }
         });
@@ -332,38 +356,70 @@ function CubeModel({
     };
 
     const isPrimaryClick = (e: any): boolean => {
-        const native = e.nativeEvent ?? e;
-        return native.button === undefined || native.button === 0;
+        // For touches or pointer events, button 0 is left click or tap.
+        return e.button === undefined || e.button === 0;
     };
 
     const handlePointerDown = (e: any) => {
-        e.stopPropagation();
         if (!isPrimaryClick(e)) return;
 
-        const native = e.nativeEvent ?? e;
-        pointerDownPos.current = { x: native.clientX, y: native.clientY };
+        pointerDownPos.current = { x: e.clientX, y: e.clientY };
 
-        const cellID = getClickedCellId(e);
-        if (cellID && nodes[cellID]) {
+        const cellIDRaw = getClickedCellId(e);
+        const isBackplate = cellIDRaw?.includes('_Back');
+        const cellID = isBackplate ? cellIDRaw?.substring(0, cellIDRaw.indexOf('_Back')) : cellIDRaw;
+        
+        // Let OrbitControls handle 'Cube_Base' clicks for rotation, only animate face cells 
+        if (cellID && nodes[cellID] && cellID.includes('_') && !isBackplate) {
             const mesh = nodes[cellID];
+            const orig = mesh.userData.originalPosition as THREE.Vector3;
+            if (!orig) return;
+
+            // Mechanical button press (INWARDS)
+            if (mesh.userData.pressTween) mesh.userData.pressTween.kill();
+            
             const dummy = { offset: 0 };
-            gsap.to(dummy, {
-                offset: 0.04,
-                duration: 0.15,
-                yoyo: true,
-                repeat: 1,
+            mesh.userData.pressTween = gsap.to(dummy, {
+                offset: -0.05,
+                duration: 0.1,
                 ease: "power2.out",
                 onUpdate: () => {
-                    const orig = mesh.userData.originalPosition as THREE.Vector3;
-                    if (!orig) return;
                     mesh.position.copy(orig);
                     mesh.translateZ(dummy.offset);
-                },
-                onComplete: () => {
-                    const orig = mesh.userData.originalPosition as THREE.Vector3;
-                    if (orig) mesh.position.copy(orig);
                 }
             });
+            mesh.userData.pressedOffset = dummy;
+        }
+    };
+
+    const handlePointerUp = (e: any) => {
+        const cellIDRaw = getClickedCellId(e);
+        const isBackplate = cellIDRaw?.includes('_Back');
+        const cellID = isBackplate ? cellIDRaw?.substring(0, cellIDRaw.indexOf('_Back')) : cellIDRaw;
+
+        if (cellID && nodes[cellID] && cellID.includes('_') && !isBackplate) {
+            const mesh = nodes[cellID];
+            if (mesh.userData.pressTween) {
+                mesh.userData.pressTween.kill();
+                mesh.userData.pressTween = null;
+                
+                const orig = mesh.userData.originalPosition as THREE.Vector3;
+                if (!orig) return;
+
+                const dummy = mesh.userData.pressedOffset || { offset: -0.05 };
+                gsap.to(dummy, {
+                    offset: 0,
+                    duration: 0.3,
+                    ease: "elastic.out(1, 0.3)",
+                    onUpdate: () => {
+                        mesh.position.copy(orig);
+                        mesh.translateZ(dummy.offset);
+                    },
+                    onComplete: () => {
+                        mesh.position.copy(orig);
+                    }
+                });
+            }
         }
     };
 
@@ -383,7 +439,7 @@ function CubeModel({
     };
 
     const getNoteTransform = (val: number, face: string) => {
-        const { position: facePos, rotation: faceRot } = getFaceTransform(face);
+        const { position: facePos } = getFaceTransform(face);
         const idx = val - 1;
         const row = Math.floor(idx / 3) - 1;
         const col = (idx % 3) - 1;
@@ -398,13 +454,29 @@ function CubeModel({
                 <primitive
                     object={scene}
                     onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
+                    onPointerOut={handlePointerUp}
                     onClick={(e: any) => {
                         e.stopPropagation();
                         if (!isPrimaryClick(e)) return;
-                        const cellID = getClickedCellId(e);
-                        if (cellID && !lockedCellIds.has(cellID)) {
-                            if (selectedNumber === 'eraser') onMove(cellID, 0);
-                            else if (typeof selectedNumber === 'number') onMove(cellID, selectedNumber);
+                        
+                        // Check if we dragged (camera rotation) vs a clean click
+                        if (pointerDownPos.current) {
+                            const dx = Math.abs(e.clientX - pointerDownPos.current.x);
+                            const dy = Math.abs(e.clientY - pointerDownPos.current.y);
+                            if (dx > 5 || dy > 5) return; // It was a drag
+                        }
+
+                        const cellIDRaw = getClickedCellId(e);
+                        const isBackplate = cellIDRaw?.includes('_Back');
+                        const cellID = isBackplate ? cellIDRaw?.substring(0, cellIDRaw.indexOf('_Back')) : cellIDRaw;
+
+                        if (cellID && !lockedCellIds.has(cellID) && cellID.includes('_')) {
+                            if (selectedNumber === 'eraser') {
+                                onMove(cellID, 0);
+                            } else if (typeof selectedNumber === 'number') {
+                                onMove(cellID, selectedNumber);
+                            }
                         }
                     }}
                 />
@@ -433,7 +505,9 @@ function CubeModel({
                             position={[0, 0, 0]}
                             rotation={[0, 0, 0]}
                             scale={[1, 1, 1]}
-                            inject={<meshStandardMaterial {...(materials[isError ? `${matName}_Error` : matName])} />}
+                            inject={
+                                <primitive object={materials[isError ? `${matName}_Error` : matName]} attach="material" />
+                            }
                         />
                     </group>,
                     cellNode

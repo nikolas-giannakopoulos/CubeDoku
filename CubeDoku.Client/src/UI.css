@@ -377,6 +377,7 @@
     box-shadow:
         0 4px 6px -1px rgba(0, 0, 0, 0.1),
         0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    pointer-events: auto;
 }
 
 .bottom-left-panel h3 {
@@ -791,4 +792,20 @@
 .auth-secondary {
     background: var(--color-surface-elevated);
     color: var(--color-text-primary);
+}
+
+.cube-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.cube-container canvas {
+    pointer-events: auto;
+}
+
+.left-panel, .right-panel, .right-panel-2, .top-bar, .bottom-left-panel {
+    pointer-events: auto;
+    z-index: 10;
 }

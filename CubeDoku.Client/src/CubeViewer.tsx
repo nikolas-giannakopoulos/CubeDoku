@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Clone, Center, ContactShadows } from '@react-three/drei';
+import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { MdLeaderboard } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp } from 'react-icons/lu';
@@ -21,20 +21,21 @@ import './UI.css';
 
 const THEME_MATERIALS = {
     dark: {
-        // Reference match: charcoal-indigo cells, lighter slate frame
-        cell:      { color: 0x2E3347, roughness: 0.25, metalness: 0.30, opacity: 1 },
-        locked:    { color: 0x252A3A, roughness: 0.20, metalness: 0.40, opacity: 1 },
-        fail:      { color: 0xCC3333, roughness: 0.30, metalness: 0.15, opacity: 1 },
-        fail_dark: { color: 0x882020, roughness: 0.30, metalness: 0.15, opacity: 1 },
-        base:      { color: 0x565E78, roughness: 0.38, metalness: 0.28 },
-        num_default: { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 1.0 },
-        num_error:   { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 0.8 }
+        // Glossy dark gray — darker than before, IBL gives it the sheen
+        cell:      { color: 0x363638, roughness: 0.18, metalness: 0.45, opacity: 1 },
+        locked:    { color: 0x2B2B30, roughness: 0.14, metalness: 0.55, opacity: 1 },
+        fail:      { color: 0xCC3333, roughness: 0.22, metalness: 0.18, opacity: 1 },
+        fail_dark: { color: 0x7A1A1A, roughness: 0.28, metalness: 0.20, opacity: 1 },
+        base:      { color: 0x252527, roughness: 0.30, metalness: 0.40 },
+        // Numbers: clean crisp white — IBL provides specularity, minimal emissive for shadow visibility only
+        num_default: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x333333, emissiveIntensity: 0.10 },
+        num_error:   { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
     },
     light: {
         cell:      { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
         locked:    { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
         fail:      { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
-        fail_dark: { color: 0x8a1b1b, roughness: 0.35, metalness: 0.05, opacity: 1 },
+        fail_dark: { color: 0x7a1010, roughness: 0.38, metalness: 0.08, opacity: 1 },
         base:      { color: 0xE8DFD0, roughness: 0.5,  metalness: 0.05 },
         num_default: { color: 0xd4af37, roughness: 0.25, metalness: 0.85, emissive: 0xc49a00, emissiveIntensity: 0.4 },
         num_error:   { color: 0xffffff, roughness: 0.25, metalness: 0.8,  emissive: 0xffffff, emissiveIntensity: 0.3 }
@@ -229,14 +230,22 @@ function CubeModel({
         });
     }, [nodes]);
 
-    // Effect to apply error materials.
-    // Two independent layers:
-    //   1. Face conflicts   — every cell on the face (including empty) turns red.
-    //   2. Edge/corner conflicts — only the specific server-reported cells turn red.
+    // Determines if a node is a proper cell tile (e.g. Front_1_2) vs a backplate/structural mesh
+    const isCellTileNode = (nodeName: string): boolean => {
+        const parts = nodeName.split('_');
+        return parts.length === 3 &&
+            ['Front', 'Back', 'Left', 'Right', 'Top', 'Bottom'].includes(parts[0]) &&
+            !isNaN(Number(parts[1])) &&
+            !isNaN(Number(parts[2]));
+    };
+
+    // Effect to apply error materials with two-tier system:
+    //  - Cell tile meshes (Front_R_C) → bright red (Cell_Fail)
+    //  - Backplate/structural meshes on same face → darker red (Cell_Fail_Dark)
     useEffect(() => {
         if (!materials) return;
 
-        // Reset all face cells to the default material.
+        // Reset ALL face nodes to default material
         Object.keys(nodes).forEach((nodeName) => {
             if (['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].some(face => nodeName.startsWith(face))) {
                 const node = nodes[nodeName];
@@ -246,27 +255,36 @@ function CubeModel({
             }
         });
 
-        // Layer 1: colour ALL cells on each conflicted face (empty cells included).
+        // Layer 1: conflicted faces — cell tiles → bright red, backplates → darker red
         Object.keys(nodes).forEach((nodeName) => {
             const face = nodeName.split('_')[0];
             if (conflictedFaces.has(face)) {
                 const node = nodes[nodeName];
                 if (node && (node as any).material) {
-                    (node as any).material = materials.Cell_Fail;
+                    if (isCellTileNode(nodeName)) {
+                        (node as any).material = materials.Cell_Fail;
+                    } else {
+                        // Backplate / structural mesh on this face → subtle dark red
+                        if (!materials.Cell_Fail_Dark) {
+                            materials.Cell_Fail_Dark = materials.Cell_Fail.clone();
+                            materials.Cell_Fail_Dark.name = 'Cell_Fail_Dark';
+                        }
+                        tweenMatDef(materials.Cell_Fail_Dark, THEME_MATERIALS[theme].fail_dark);
+                        (node as any).material = materials.Cell_Fail_Dark;
+                    }
                 }
             }
         });
 
-        // Layer 2: colour individual cells with server-reported edge/corner errors.
+        // Layer 2: individual server-reported error cells → bright red
         mockBoardData.forEach(data => {
             const node = nodes[data.id];
             if (node && (node as any).material && data.state === 'Error') {
                 (node as any).material = materials.Cell_Fail;
             }
         });
-    }, [mockBoardData, conflictedFaces, nodes, materials]);
+    }, [mockBoardData, conflictedFaces, nodes, materials, theme]);
 
-    // Mock data for demonstration - this will eventually come from the backend
 
     const groupRef = useRef<any>(null);
     // Track pointer-down position so we can distinguish a click from a drag.
@@ -290,80 +308,77 @@ function CubeModel({
     // --- Press animation: press cell + its number inward toward cube center ---
     // pressDir: the INWARD direction for each face (cell moves deeper into the cube)
     const getFacePressAxis = (cellName: string): { axis: 'x' | 'y' | 'z'; sign: number } => {
-        if (cellName.startsWith('Front'))  return { axis: 'z', sign:  1 };  // front cells move in +Z (toward center)
-        if (cellName.startsWith('Back'))   return { axis: 'z', sign: -1 };  // back cells move in -Z
-        if (cellName.startsWith('Left'))   return { axis: 'x', sign:  1 };  // left cells move in +X
-        if (cellName.startsWith('Right'))  return { axis: 'x', sign: -1 };  // right cells move in -X
-        if (cellName.startsWith('Top'))    return { axis: 'y', sign: -1 };  // top cells move in -Y
-        if (cellName.startsWith('Bottom')) return { axis: 'y', sign:  1 };  // bottom cells move in +Y
+        // Sign = OPPOSITE of the number offset direction (offset points outward; press goes inward)
+        if (cellName.startsWith('Front'))  return { axis: 'z', sign:  1 };  // offset -Z → outward -Z → press +Z
+        if (cellName.startsWith('Back'))   return { axis: 'z', sign: -1 };  // offset +Z → outward +Z → press -Z
+        if (cellName.startsWith('Left'))   return { axis: 'x', sign: -1 };  // offset +X → outward +X → press -X
+        if (cellName.startsWith('Right'))  return { axis: 'x', sign:  1 };  // offset -X → outward -X → press +X
+        if (cellName.startsWith('Top'))    return { axis: 'y', sign: -1 };  // offset +Y → outward +Y → press -Y
+        if (cellName.startsWith('Bottom')) return { axis: 'y', sign:  1 };  // offset -Y → outward -Y → press +Y
         return { axis: 'z', sign: 1 };
     };
 
-    const triggerCellPress = (cellId: string) => {
+    // --- Press animation split into DOWN (press in, hold) and UP (spring back) ---
+    const triggerCellPressDown = (cellId: string) => {
+        if (!isCellTileNode(cellId)) return;
         const cellMesh = nodes[cellId] as any;
         if (!cellMesh) return;
 
         const { axis, sign } = getFacePressAxis(cellId);
-        const PRESS_DEPTH = 0.09;  // units inward
+        const PRESS_DEPTH = 0.09;
 
-        // Save original position once, or retrieve from userData
         if (cellMesh.userData._origPos === undefined) {
             cellMesh.userData._origPos = {
-                x: cellMesh.position.x,
-                y: cellMesh.position.y,
-                z: cellMesh.position.z,
+                x: cellMesh.position.x, y: cellMesh.position.y, z: cellMesh.position.z,
             };
         }
         const orig = cellMesh.userData._origPos;
-        const pressTarget = orig[axis] + sign * PRESS_DEPTH;
 
-        // Kill any running tween on this mesh
         gsap.killTweensOf(cellMesh.position);
+        // Press in and HOLD — no onComplete, stays pressed while pointer is down
+        gsap.to(cellMesh.position, { [axis]: orig[axis] + sign * PRESS_DEPTH, duration: 0.08, ease: 'power2.in' });
 
-        // Press in, then spring back
-        gsap.to(cellMesh.position, {
-            [axis]: pressTarget,
-            duration: 0.07,
-            ease: 'power2.in',
-            onComplete: () => {
-                gsap.to(cellMesh.position, {
-                    [axis]: orig[axis],
-                    duration: 0.35,
-                    ease: 'elastic.out(1.1, 0.4)',
-                });
-            }
-        });
-
-        // Also animate the number group if it exists
         if (groupRef.current) {
             const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
             if (numGroup) {
                 if (numGroup.userData._origPos === undefined) {
                     numGroup.userData._origPos = {
-                        x: numGroup.position.x,
-                        y: numGroup.position.y,
-                        z: numGroup.position.z,
+                        x: numGroup.position.x, y: numGroup.position.y, z: numGroup.position.z,
                     };
                 }
                 const numOrig = numGroup.userData._origPos;
-                const numPressTarget = numOrig[axis] + sign * PRESS_DEPTH;
-
                 gsap.killTweensOf(numGroup.position);
-                gsap.to(numGroup.position, {
-                    [axis]: numPressTarget,
-                    duration: 0.07,
-                    ease: 'power2.in',
-                    onComplete: () => {
-                        gsap.to(numGroup.position, {
-                            [axis]: numOrig[axis],
-                            duration: 0.35,
-                            ease: 'elastic.out(1.1, 0.4)',
-                        });
-                    }
-                });
+                gsap.to(numGroup.position, { [axis]: numOrig[axis] + sign * PRESS_DEPTH, duration: 0.08, ease: 'power2.in' });
             }
         }
     };
+
+    const triggerCellPressUp = (cellId: string) => {
+        if (!isCellTileNode(cellId)) return;
+        const cellMesh = nodes[cellId] as any;
+        if (!cellMesh) return;
+
+        const { axis } = getFacePressAxis(cellId);
+        const orig = cellMesh.userData._origPos;
+        if (!orig) return;
+
+        gsap.killTweensOf(cellMesh.position);
+        gsap.to(cellMesh.position, { [axis]: orig[axis], duration: 0.35, ease: 'elastic.out(1.1, 0.4)' });
+
+        if (groupRef.current) {
+            const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
+            if (numGroup) {
+                const numOrig = numGroup.userData._origPos;
+                if (numOrig) {
+                    gsap.killTweensOf(numGroup.position);
+                    gsap.to(numGroup.position, { [axis]: numOrig[axis], duration: 0.35, ease: 'elastic.out(1.1, 0.4)' });
+                }
+            }
+        }
+    };
+
+    // Track which cell is currently held pressed (for hold-state)
+    const pressedCellRef = useRef<string | null>(null);
 
     const handlePointerDown = (e: any) => {
         e.stopPropagation();
@@ -374,7 +389,28 @@ function CubeModel({
         pointerDownPos.current = { x: native.clientX, y: native.clientY };
 
         const cellID = getClickedCellId(e);
-        if (cellID && lockedCellIds.has(cellID)) return;
+        if (!cellID) return;
+        if (lockedCellIds.has(cellID)) return;
+
+        // Press in immediately on pointer down — hold until pointer up
+        pressedCellRef.current = cellID;
+        triggerCellPressDown(cellID);
+    };
+
+    const handlePointerUp = (e: any) => {
+        e.stopPropagation();
+        const cellId = pressedCellRef.current;
+        pressedCellRef.current = null;
+        if (cellId) triggerCellPressUp(cellId);
+    };
+
+    const handlePointerLeave = (e: any) => {
+        e.stopPropagation();
+        const cellId = pressedCellRef.current;
+        if (cellId) {
+            pressedCellRef.current = null;
+            triggerCellPressUp(cellId);
+        }
     };
 
     const getNumberTransform = (cellName: string) => {
@@ -473,6 +509,8 @@ function CubeModel({
             <primitive
                 object={scene}
                 onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerLeave}
                 onContextMenu={(e: any) => {
                     e.stopPropagation();
                     const native = e.nativeEvent ?? e;
@@ -496,11 +534,9 @@ function CubeModel({
                     if (cellID) {
                         if (lockedCellIds.has(cellID)) return;
 
-                        // Trigger the press/push animation on click regardless of game action
-                        triggerCellPress(cellID);
-
+                        // Game logic only — animation handled by onPointerDown/Up
                         if (selectedNumber === 'eraser') {
-                            onMove(cellID, 0); // 0 means erase
+                            onMove(cellID, 0);
                         } else if (typeof selectedNumber === 'number') {
                             onMove(cellID, selectedNumber);
                         }
@@ -534,7 +570,7 @@ function CubeModel({
                         <group scale={isLocked ? [1.12, 1.12, 1.12] : [1, 1, 1]}>
                             <Center>
                                 <Clone
-                                    key={`clone-${data.id}-${data.value}`}
+                                    key={`clone-${data.id}-${data.value}-${isError ? 'e' : 'n'}`}
                                     object={assetNode}
                                     visible={true}
                                     raycast={() => null}
@@ -1716,14 +1752,12 @@ function CubeViewer() {
             >
                 {theme === 'dark' ? (
                     <>
-                        {/* Strong hemisphere — fills shadows so the cube isn't pitch-black */}
-                        <hemisphereLight args={[0xffffff, 0x334455, 0.9]} />
-                        {/* Key light: high-angle for strong highlights on cell surfaces */}
+                        {/* Neutral gray hemisphere — no blue cast */}
+                        <hemisphereLight args={[0xffffff, 0x3A3A3A, 0.9]} />
+                        {/* Key light */}
                         <directionalLight position={[10, 20, 15]} intensity={1.8} />
-                        {/* Left fill — prevents total darkness on shadowed faces */}
+                        {/* Left fill */}
                         <directionalLight position={[-6, 4, 4]} intensity={0.7} />
-                        {/* Subtle back rim */}
-                        <directionalLight position={[0, -5, -10]} intensity={0.3} color={0x4466aa} />
                     </>
                 ) : (
                     <>
@@ -1733,6 +1767,12 @@ function CubeViewer() {
                     </>
                 )}
                 <Suspense fallback={null}>
+                    {/* Environment (IBL) — this is what gives the cube its gloss and metallic sheen.
+                        Without this, MeshStandardMaterial ignores metalness/roughness entirely. */}
+                    <Environment
+                        preset={theme === 'dark' ? 'studio' : 'apartment'}
+                        environmentIntensity={theme === 'dark' ? 0.65 : 0.5}
+                    />
                     <CubeModel
                         selectedNumber={selectedNumber}
                         mockBoardData={mockBoardData}

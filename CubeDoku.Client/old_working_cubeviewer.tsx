@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Clone, Center, ContactShadows } from '@react-three/drei';
+import { OrbitControls, useGLTF, Clone, Center } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { MdLeaderboard } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp } from 'react-icons/lu';
@@ -13,66 +13,7 @@ import { SettingsModal } from './SettingsModal';
 import { UserSettingsModal } from './UserSettingsModal';
 import { HowToPlayModal } from './HowToPlayModal';
 import { useAuth } from './context/AuthContext';
-import { useTheme } from './context/ThemeContext';
-import * as THREE from 'three';
-import gsap from 'gsap';
 import './UI.css';
-
-
-const THEME_MATERIALS = {
-    dark: {
-        // Dark slate cells — visibly dark but not pitch-black, some gloss
-        cell: { color: 0x353A48, roughness: 0.22, metalness: 0.35, opacity: 1 },
-        locked: { color: 0x2B2F3C, roughness: 0.18, metalness: 0.45, opacity: 1 },
-        fail: { color: 0xCC3333, roughness: 0.35, metalness: 0.15, opacity: 1 },
-        fail_dark: { color: 0x882020, roughness: 0.35, metalness: 0.15, opacity: 1 },
-        base: { color: 0x50566A, roughness: 0.40, metalness: 0.30 },
-        // Numbers: bright white metallic with emissive glow so always readable
-        num_default: { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 1.0 },
-        num_error: { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 0.8 }
-    },
-    light: {
-        cell: { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
-        locked: { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
-        fail: { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
-        fail_dark: { color: 0x8a1b1b, roughness: 0.35, metalness: 0.05, opacity: 1 },
-        base: { color: 0xE8DFD0, roughness: 0.5, metalness: 0.05 },
-        num_default: { color: 0xd4af37, roughness: 0.25, metalness: 0.85, emissive: 0xc49a00, emissiveIntensity: 0.4 },
-        num_error: { color: 0xffffff, roughness: 0.25, metalness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.3 }
-    }
-};
-
-
-const tweenMatDef = (mat: any, target: any, duration = 0.4) => {
-    if (!mat) return;
-    const targetColor = new THREE.Color(target.color);
-    gsap.to(mat.color, { r: targetColor.r, g: targetColor.g, b: targetColor.b, duration, ease: 'power2.inOut' });
-    if (target.roughness !== undefined) gsap.to(mat, { roughness: target.roughness, duration, ease: 'power2.inOut' });
-    if (target.metalness !== undefined) gsap.to(mat, { metalness: target.metalness, duration, ease: 'power2.inOut' });
-    if (target.opacity !== undefined) {
-        gsap.to(mat, {
-            opacity: target.opacity,
-            duration,
-            ease: 'power2.inOut',
-            onUpdate: () => { mat.transparent = mat.opacity < 1; }
-        });
-    }
-    // Use != null (not truthiness) — emissive is always a Color object, but Color(0,0,0) is falsy.
-    // emissiveIntensity defaults to 0 which is also falsy — must use !== undefined.
-    if (target.emissive != null) {
-        if (!mat.emissive) mat.emissive = new THREE.Color(0x000000);
-        const tgtEmi = new THREE.Color(target.emissive);
-        // Set immediately so the first frame is correct, then animate to confirm
-        mat.emissive.set(tgtEmi);
-        gsap.to(mat.emissive, { r: tgtEmi.r, g: tgtEmi.g, b: tgtEmi.b, duration, ease: 'power2.inOut' });
-    }
-    if (target.emissiveIntensity !== undefined) {
-        // Set immediately, then tween for smooth transitions
-        mat.emissiveIntensity = target.emissiveIntensity;
-        gsap.to(mat, { emissiveIntensity: target.emissiveIntensity, duration, ease: 'power2.inOut' });
-    }
-    mat.needsUpdate = true;
-};
 
 const DEFAULT_CAMERA_POSITION: [number, number, number] = [0, 0, 8.6];
 const HINT_VIEW_DISTANCE = 8.6;
@@ -122,8 +63,7 @@ function CubeModel({
     onMove,
     conflictedFaces,
     lockedCellIds,
-    programmaticPressCellId,
-    cellNotes
+    programmaticPressCellId
 }: {
     selectedNumber: number | 'eraser' | null;
     mockBoardData: BoardCell[];
@@ -131,100 +71,16 @@ function CubeModel({
     conflictedFaces: Set<string>;
     lockedCellIds: Set<string>;
     programmaticPressCellId?: string | null;
-    cellNotes?: Record<string, number[]>;
 }) {
     // timestamp to force reload, or just a version number
-    const { theme } = useTheme() as { theme: 'light' | 'dark' };
     const { scene, nodes, materials } = useGLTF('/cube.glb') as any;
-
-    useMemo(() => {
-        if (!materials) return;
-
-        // Clone / ensure base variants exist
-        if (materials['Cell_Material'] && !materials.Cell_Fail) {
-            materials.Cell_Fail = materials['Cell_Material'].clone();
-            materials.Cell_Fail.name = 'Cell_Fail';
-        }
-        if (materials['Cell_Material'] && !materials.Cell_Locked) {
-            materials.Cell_Locked = materials['Cell_Material'].clone();
-            materials.Cell_Locked.name = 'Cell_Locked';
-        }
-        if (materials['Cell_Material'] && !materials.Cube_Base) {
-            materials.Cube_Base = materials['Cell_Material'].clone();
-            materials.Cube_Base.name = 'Cube_Base';
-        }
-
-        for (let i = 1; i <= 9; i++) {
-            const matName = `Asset_Num_${i}_Mat`;
-
-            // If the GLB doesn't have this material, create a fresh one
-            if (!materials[matName]) {
-                materials[matName] = new THREE.MeshStandardMaterial({ name: matName });
-            }
-
-            const m = materials[matName] as THREE.MeshStandardMaterial;
-
-            // ── Force-initialize number materials with bright metallic+emissive values.
-            // GLTF defaults are opaque black with no emissive; we must override every
-            // relevant property immediately so the first render is already correct.
-            m.color.set(0xFFFFFF);
-            m.roughness = 0.15;
-            m.metalness = 0.85;
-            m.transparent = false;
-            m.opacity = 1;
-            if (!m.emissive) m.emissive = new THREE.Color(0x000000);
-            m.emissive.set(0xFFFFFF);
-            m.emissiveIntensity = 0.9;
-            m.needsUpdate = true;
-
-            // Clone for error variant
-            if (!materials[`${matName}_Error`]) {
-                materials[`${matName}_Error`] = m.clone();
-                materials[`${matName}_Error`].name = `${matName}_Error`;
-                (materials[`${matName}_Error`] as THREE.MeshStandardMaterial).emissiveIntensity = 0.7;
-                (materials[`${matName}_Error`] as THREE.MeshStandardMaterial).needsUpdate = true;
-            }
-        }
-    }, [materials]);
-
-    // Apply theme materials dynamically
-    useEffect(() => {
-        if (!materials) return;
-        const config = THEME_MATERIALS[theme];
-        tweenMatDef(materials.Cell_Material, config.cell);
-        tweenMatDef(materials.Cell_Locked, config.locked);
-        tweenMatDef(materials.Cell_Fail, config.fail);
-        tweenMatDef(materials.Cube_Base, config.base);
-
-        for (let i = 1; i <= 9; i++) {
-            const matName = `Asset_Num_${i}_Mat`;
-            if (materials[matName]) {
-                tweenMatDef(materials[matName], config.num_default);
-                if (materials[`${matName}_Error`]) {
-                    tweenMatDef(materials[`${matName}_Error`], config.num_error);
-                }
-            }
-        }
-
-        // --- Critical Link Fix ---
-        if (scene) {
-            scene.traverse((obj: any) => {
-                if (obj.isMesh) {
-                    if (obj.name.toLowerCase().includes('base') || obj.name === 'Cube') {
-                        obj.material = materials.Cube_Base;
-                    }
-                }
-            });
-        }
-    }, [theme, materials, scene]);
 
 
     // Hide the original asset meshes so they don't appear in their default export location
     // We only want to show them where we explicitly place them
     useEffect(() => {
-        if (!nodes) return;
         Object.keys(nodes).forEach(nodeName => {
-            if (nodeName.startsWith('Asset_Num_') && nodes[nodeName]) {
+            if (nodeName.startsWith('Asset_Num_')) {
                 nodes[nodeName].visible = false;
             }
         });
@@ -306,27 +162,27 @@ function CubeModel({
         let rotation: [number, number, number] = [0, 0, 0];
 
         if (cellName.startsWith('Front')) {
-            offset = [0, 0, -0.15];
+            offset = [0, 0, -0.38];
             rotation = [Math.PI, 0, Math.PI];
         }
         if (cellName.startsWith('Back')) {
-            offset = [0, 0, 0.15];
+            offset = [0, 0, 0.38];
             rotation = [0, 0, 0];
         }
         if (cellName.startsWith('Left')) {
-            offset = [0.15, 0, 0];
+            offset = [0.38, 0, 0];
             rotation = [0, Math.PI / 2, 0];
         }
         if (cellName.startsWith('Right')) {
-            offset = [-0.15, 0, 0];
+            offset = [-0.38, 0, 0];
             rotation = [0, -Math.PI / 2, 0];
         }
         if (cellName.startsWith('Top')) {
-            offset = [0, 0.15, 0];
+            offset = [0, 0.38, 0];
             rotation = [Math.PI / 2, Math.PI, 0];
         }
         if (cellName.startsWith('Bottom')) {
-            offset = [0, -0.15, 0];
+            offset = [0, -0.38, 0];
             rotation = [Math.PI / 2, 0, Math.PI];
         }
 
@@ -434,12 +290,6 @@ function CubeModel({
 
                 if (!cellNode || !assetNode) return null;
                 const { offset, rotation } = getNumberTransform(cellNode.name);
-                const faceName = data.id.split('_')[0];
-                const isError = data.state === 'Error' || conflictedFaces.has(faceName);
-                const cfg = isError
-                    ? THEME_MATERIALS[theme].num_error
-                    : THEME_MATERIALS[theme].num_default;
-
                 return (
                     <group
                         key={`${data.id}-${data.value}-${isLocked ? 'locked' : 'open'}`}
@@ -458,58 +308,9 @@ function CubeModel({
                                     object={assetNode}
                                     visible={true}
                                     raycast={() => null}
-                                    inject={
-                                        <meshStandardMaterial
-                                            color={cfg.color}
-                                            roughness={cfg.roughness}
-                                            metalness={cfg.metalness}
-                                            emissive={cfg.emissive ?? cfg.color}
-                                            emissiveIntensity={cfg.emissiveIntensity ?? 0.8}
-                                        />
-                                    }
                                 />
                             </Center>
                         </group>
-                    </group>
-                );
-            })}
-            {cellNotes && Object.entries(cellNotes).map(([cellId, notesArray]) => {
-                // Don't render notes if the cell already has a placed number
-                if (mockBoardData.some(d => d.id === cellId && d.value > 0)) return null;
-
-                const cellNode = nodes[cellId];
-                if (!cellNode) return null;
-                const { offset, rotation } = getNumberTransform(cellNode.name);
-
-                return (
-                    <group
-                        key={`notes-${cellId}`}
-                        position={[
-                            cellNode.position.x + offset[0],
-                            cellNode.position.y + offset[1],
-                            cellNode.position.z + offset[2],
-                        ]}
-                        rotation={rotation}
-                    >
-                        {notesArray.map(val => {
-                            const assetNode = nodes[`Asset_Num_${val}`];
-                            if (!assetNode) return null;
-                            const idx = val - 1;
-                            const noteRow = Math.floor(idx / 3) - 1;
-                            const noteCol = (idx % 3) - 1;
-                            const spacing = 0.26;
-                            return (
-                                <group
-                                    key={`note-${cellId}-${val}`}
-                                    position={[noteCol * spacing, -noteRow * spacing, 0]}
-                                    scale={[0.22, 0.22, 0.22]}
-                                >
-                                    <Center>
-                                        <Clone object={assetNode} visible={true} raycast={() => null} />
-                                    </Center>
-                                </group>
-                            );
-                        })}
                     </group>
                 );
             })}
@@ -520,20 +321,12 @@ function CubeModel({
 
 function CubeViewer() {
     const { isLoggedIn, token, logout, user } = useAuth();
-    const { theme } = useTheme() as { theme: 'light' | 'dark' };
 
     const [selectedNumber, setSelectedNumber] = useState<number | 'eraser' | null>(null);
-    const [cellNotes, _setCellNotes] = useState<Record<string, number[]>>({});
     const [mockBoardData, setMockBoardData] = useState<BoardCell[]>([
-        { id: 'Left_1_1', value: 5 },
-        { id: 'Left_2_1', value: 8, state: 'Error' },
-        { id: 'Left_3_1', value: 3 },
-        { id: 'Top_1_3', value: 7 },
-        { id: 'Top_3_1', value: 9 },
-        { id: 'Right_1_3', value: 2 },
-        { id: 'Right_2_3', value: 6 },
-        { id: 'Right_3_3', value: 1 },
-        { id: 'Right_3_2', value: 8 },
+        { id: 'Left_1_2', value: 2 },
+        { id: 'Bottom_1_2', value: 4 },
+        { id: 'Top_1_1', value: 9 },
     ]);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -1630,28 +1423,10 @@ function CubeViewer() {
                 </div>
             </div>
             {/* 3D Canvas */}
-            <Canvas
-                camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}
-                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 1.0 }}
-            >
-                {theme === 'dark' ? (
-                    <>
-                        {/* Strong hemisphere — fills shadows so the cube isn't pitch-black */}
-                        <hemisphereLight args={[0xffffff, 0x334455, 0.9]} />
-                        {/* Key light: high-angle for strong highlights on cell surfaces */}
-                        <directionalLight position={[10, 20, 15]} intensity={1.8} />
-                        {/* Left fill — prevents total darkness on shadowed faces */}
-                        <directionalLight position={[-6, 4, 4]} intensity={0.7} />
-                        {/* Subtle back rim */}
-                        <directionalLight position={[0, -5, -10]} intensity={0.3} color={0x4466aa} />
-                    </>
-                ) : (
-                    <>
-                        <ambientLight intensity={0.65} />
-                        <directionalLight position={[5, 10, 5]} intensity={1.3} castShadow />
-                        <directionalLight position={[-4, 3, 3]} intensity={0.45} color={0xffe8c0} />
-                    </>
-                )}
+            <Canvas camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 5]} intensity={1} />
+                <directionalLight position={[-10, -10, -5]} intensity={0.5} />
                 <Suspense fallback={null}>
                     <CubeModel
                         selectedNumber={selectedNumber}
@@ -1660,30 +1435,19 @@ function CubeViewer() {
                         conflictedFaces={conflictedFaces}
                         lockedCellIds={lockedCellIds}
                         programmaticPressCellId={programmaticPressCellId}
-                        cellNotes={cellNotes}
-                    />
-                    <ContactShadows
-                        position={[0, -1.65, 0]}
-                        opacity={theme === 'dark' ? 0.55 : 0.38}
-                        scale={3.5}
-                        blur={2.2}
-                        far={2}
-                        color={theme === 'dark' ? '#0f172a' : '#8a6d4e'}
                     />
                 </Suspense>
 
                 <OrbitControls
                     ref={orbitControlsRef}
-                    makeDefault
                     enableDamping
-                    dampingFactor={0.08}
+                                dampingFactor={0.08}
                     rotateSpeed={0.5}
-                    minDistance={6.5}
-                    maxDistance={16}
-                    minPolarAngle={0.18}
-                    maxPolarAngle={Math.PI - 0.18}
+                                minDistance={6.5}
+                                maxDistance={16}
+                                minPolarAngle={0.18}
+                                maxPolarAngle={Math.PI - 0.18}
                     enablePan={false}
-                    target={[0, 0, 0]}
                 />
             </Canvas>
 

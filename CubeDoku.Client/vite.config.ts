@@ -54,7 +54,7 @@ export default defineConfig({
         }
     },
     server: {
-        host: '127.0.0.1', // Force IPv4 to avoid Windows IPv6 binding issues
+        host: 'localhost',
         proxy: {
             '^/weatherforecast': {
                 target,
@@ -68,6 +68,11 @@ export default defineConfig({
         port: parseInt(env.DEV_SERVER_PORT || '5173'),
         strictPort: true,
         cors: true,
+        hmr: {
+            host: 'localhost',
+            protocol: 'wss',
+            clientPort: parseInt(env.DEV_SERVER_PORT || '5173')
+        },
         https: {
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),

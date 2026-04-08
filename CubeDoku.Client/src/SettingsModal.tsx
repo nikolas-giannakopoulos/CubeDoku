@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { LuChevronLeft } from 'react-icons/lu';
+import { useTheme } from './context/ThemeContext';
 import './ProfileModal.css';
 
 interface SettingsModalProps {
@@ -8,15 +8,10 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
-    const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
-        const saved = localStorage.getItem('themeMode');
-        return saved === 'light' ? 'light' : 'dark';
-    });
+    const { theme, setTheme } = useTheme();
 
     const applyTheme = (nextTheme: 'dark' | 'light') => {
-        document.documentElement.setAttribute('data-theme', nextTheme);
-        localStorage.setItem('themeMode', nextTheme);
-        setThemeMode(nextTheme);
+        setTheme(nextTheme);
     };
 
     if (!isOpen) return null;
@@ -37,14 +32,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                         <div className="settings-theme-row" role="group" aria-label="Theme selection">
                             <button
                                 type="button"
-                                className={`settings-theme-btn${themeMode === 'dark' ? ' active' : ''}`}
+                                className={`settings-theme-btn${theme === 'dark' ? ' active' : ''}`}
                                 onClick={() => applyTheme('dark')}
                             >
                                 Dark
                             </button>
                             <button
                                 type="button"
-                                className={`settings-theme-btn${themeMode === 'light' ? ' active' : ''}`}
+                                className={`settings-theme-btn${theme === 'light' ? ' active' : ''}`}
                                 onClick={() => applyTheme('light')}
                             >
                                 Light

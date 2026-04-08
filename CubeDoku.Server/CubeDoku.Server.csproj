@@ -8,7 +8,7 @@
     <RootNamespace>CubeDoku.Server</RootNamespace>
     <SpaRoot>..\CubeDoku.Client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://127.0.0.1:5173</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>

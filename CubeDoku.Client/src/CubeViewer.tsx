@@ -21,24 +21,23 @@ import './UI.css';
 
 const THEME_MATERIALS = {
     dark: {
-        // Dark slate cells — visibly dark but not pitch-black, some gloss
-        cell: { color: 0x353A48, roughness: 0.22, metalness: 0.35, opacity: 1 },
-        locked: { color: 0x2B2F3C, roughness: 0.18, metalness: 0.45, opacity: 1 },
-        fail: { color: 0xCC3333, roughness: 0.35, metalness: 0.15, opacity: 1 },
-        fail_dark: { color: 0x882020, roughness: 0.35, metalness: 0.15, opacity: 1 },
-        base: { color: 0x50566A, roughness: 0.40, metalness: 0.30 },
-        // Numbers: bright white metallic with emissive glow so always readable
+        // Reference match: charcoal-indigo cells, lighter slate frame
+        cell:      { color: 0x2E3347, roughness: 0.25, metalness: 0.30, opacity: 1 },
+        locked:    { color: 0x252A3A, roughness: 0.20, metalness: 0.40, opacity: 1 },
+        fail:      { color: 0xCC3333, roughness: 0.30, metalness: 0.15, opacity: 1 },
+        fail_dark: { color: 0x882020, roughness: 0.30, metalness: 0.15, opacity: 1 },
+        base:      { color: 0x565E78, roughness: 0.38, metalness: 0.28 },
         num_default: { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 1.0 },
-        num_error: { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 0.8 }
+        num_error:   { color: 0xFFFFFF, roughness: 0.1, metalness: 0.9, emissive: 0xFFFFFF, emissiveIntensity: 0.8 }
     },
     light: {
-        cell: { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
-        locked: { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
-        fail: { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
+        cell:      { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
+        locked:    { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
+        fail:      { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
         fail_dark: { color: 0x8a1b1b, roughness: 0.35, metalness: 0.05, opacity: 1 },
-        base: { color: 0xE8DFD0, roughness: 0.5, metalness: 0.05 },
+        base:      { color: 0xE8DFD0, roughness: 0.5,  metalness: 0.05 },
         num_default: { color: 0xd4af37, roughness: 0.25, metalness: 0.85, emissive: 0xc49a00, emissiveIntensity: 0.4 },
-        num_error: { color: 0xffffff, roughness: 0.25, metalness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.3 }
+        num_error:   { color: 0xffffff, roughness: 0.25, metalness: 0.8,  emissive: 0xffffff, emissiveIntensity: 0.3 }
     }
 };
 
@@ -285,8 +284,85 @@ function CubeModel({
 
     const isPrimaryClick = (e: any): boolean => {
         const native = e.nativeEvent ?? e;
-        // button can be undefined on touch/pointer events; treat as primary.
         return native.button === undefined || native.button === 0;
+    };
+
+    // --- Press animation: press cell + its number inward toward cube center ---
+    // pressDir: the INWARD direction for each face (cell moves deeper into the cube)
+    const getFacePressAxis = (cellName: string): { axis: 'x' | 'y' | 'z'; sign: number } => {
+        if (cellName.startsWith('Front'))  return { axis: 'z', sign:  1 };  // front cells move in +Z (toward center)
+        if (cellName.startsWith('Back'))   return { axis: 'z', sign: -1 };  // back cells move in -Z
+        if (cellName.startsWith('Left'))   return { axis: 'x', sign:  1 };  // left cells move in +X
+        if (cellName.startsWith('Right'))  return { axis: 'x', sign: -1 };  // right cells move in -X
+        if (cellName.startsWith('Top'))    return { axis: 'y', sign: -1 };  // top cells move in -Y
+        if (cellName.startsWith('Bottom')) return { axis: 'y', sign:  1 };  // bottom cells move in +Y
+        return { axis: 'z', sign: 1 };
+    };
+
+    const triggerCellPress = (cellId: string) => {
+        const cellMesh = nodes[cellId] as any;
+        if (!cellMesh) return;
+
+        const { axis, sign } = getFacePressAxis(cellId);
+        const PRESS_DEPTH = 0.09;  // units inward
+
+        // Save original position once, or retrieve from userData
+        if (cellMesh.userData._origPos === undefined) {
+            cellMesh.userData._origPos = {
+                x: cellMesh.position.x,
+                y: cellMesh.position.y,
+                z: cellMesh.position.z,
+            };
+        }
+        const orig = cellMesh.userData._origPos;
+        const pressTarget = orig[axis] + sign * PRESS_DEPTH;
+
+        // Kill any running tween on this mesh
+        gsap.killTweensOf(cellMesh.position);
+
+        // Press in, then spring back
+        gsap.to(cellMesh.position, {
+            [axis]: pressTarget,
+            duration: 0.07,
+            ease: 'power2.in',
+            onComplete: () => {
+                gsap.to(cellMesh.position, {
+                    [axis]: orig[axis],
+                    duration: 0.35,
+                    ease: 'elastic.out(1.1, 0.4)',
+                });
+            }
+        });
+
+        // Also animate the number group if it exists
+        if (groupRef.current) {
+            const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
+            if (numGroup) {
+                if (numGroup.userData._origPos === undefined) {
+                    numGroup.userData._origPos = {
+                        x: numGroup.position.x,
+                        y: numGroup.position.y,
+                        z: numGroup.position.z,
+                    };
+                }
+                const numOrig = numGroup.userData._origPos;
+                const numPressTarget = numOrig[axis] + sign * PRESS_DEPTH;
+
+                gsap.killTweensOf(numGroup.position);
+                gsap.to(numGroup.position, {
+                    [axis]: numPressTarget,
+                    duration: 0.07,
+                    ease: 'power2.in',
+                    onComplete: () => {
+                        gsap.to(numGroup.position, {
+                            [axis]: numOrig[axis],
+                            duration: 0.35,
+                            ease: 'elastic.out(1.1, 0.4)',
+                        });
+                    }
+                });
+            }
+        }
     };
 
     const handlePointerDown = (e: any) => {
@@ -419,6 +495,10 @@ function CubeModel({
 
                     if (cellID) {
                         if (lockedCellIds.has(cellID)) return;
+
+                        // Trigger the press/push animation on click regardless of game action
+                        triggerCellPress(cellID);
+
                         if (selectedNumber === 'eraser') {
                             onMove(cellID, 0); // 0 means erase
                         } else if (typeof selectedNumber === 'number') {

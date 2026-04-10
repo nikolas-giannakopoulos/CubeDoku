@@ -258,7 +258,12 @@ function CubeModel({
             if (['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].some(face => nodeName.startsWith(face))) {
                 const node = nodes[nodeName];
                 if (node && (node as any).material) {
-                    (node as any).material = materials.Cell_Material;
+                    // Cell tiles get the cell material, structural backplates get the base material
+                    if (isCellTileNode(nodeName)) {
+                        (node as any).material = materials.Cell_Material;
+                    } else {
+                        (node as any).material = materials.Cube_Base;
+                    }
                 }
             }
         });
@@ -291,6 +296,17 @@ function CubeModel({
             if (node && (node as any).material && data.state === 'Error') {
                 (node as any).material = materials.Cell_Fail;
                 currentErroredCells.add(data.id);
+                
+                // Also turn this specific cell's backplate darker red (handles individual corners/edges)
+                const backNode = nodes[`${data.id}_Back`] || nodes[`${data.id}_Backplate`];
+                if (backNode && (backNode as any).material) {
+                    if (!materials.Cell_Fail_Dark) {
+                        materials.Cell_Fail_Dark = materials.Cell_Fail.clone();
+                        materials.Cell_Fail_Dark.name = 'Cell_Fail_Dark';
+                    }
+                    tweenMatDef(materials.Cell_Fail_Dark, THEME_MATERIALS[theme].fail_dark);
+                    (backNode as any).material = materials.Cell_Fail_Dark;
+                }
             }
         });
 

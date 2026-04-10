@@ -239,11 +239,17 @@ function CubeModel({
             !isNaN(Number(parts[2]));
     };
 
+    // Tracks which cell IDs were in error last render — diff used to fire pop only ONCE per new error
+    const prevErroredCellsRef = useRef<Set<string>>(new Set());
+
     // Effect to apply error materials with two-tier system:
     //  - Cell tile meshes (Front_R_C) → bright red (Cell_Fail)
     //  - Backplate/structural meshes on same face → darker red (Cell_Fail_Dark)
     useEffect(() => {
         if (!materials) return;
+
+        // Build the current full set of errored cell tile IDs (both sources)
+        const currentErroredCells = new Set<string>();
 
         // Reset ALL face nodes to default material
         Object.keys(nodes).forEach((nodeName) => {
@@ -263,6 +269,7 @@ function CubeModel({
                 if (node && (node as any).material) {
                     if (isCellTileNode(nodeName)) {
                         (node as any).material = materials.Cell_Fail;
+                        currentErroredCells.add(nodeName);
                     } else {
                         // Backplate / structural mesh on this face → subtle dark red
                         if (!materials.Cell_Fail_Dark) {
@@ -281,9 +288,63 @@ function CubeModel({
             const node = nodes[data.id];
             if (node && (node as any).material && data.state === 'Error') {
                 (node as any).material = materials.Cell_Fail;
+                currentErroredCells.add(data.id);
             }
         });
+
+        // Outward pop — fires only for cells NEWLY entering error state this render.
+        // Cell nudges outward from the cube face then snaps back to its exact original position.
+        // The number group on that cell animates in perfect sync on the same GSAP timeline.
+        currentErroredCells.forEach(cellId => {
+            if (prevErroredCellsRef.current.has(cellId)) return; // already errored, skip
+
+            const cellMesh = nodes[cellId] as any;
+            if (!cellMesh) return;
+
+            const { axis, sign } = getFacePressAxis(cellId);
+            // Cache original position once — reused if the same cell re-errors later
+            if (!cellMesh.userData._origPos) {
+                cellMesh.userData._origPos = {
+                    x: cellMesh.position.x, y: cellMesh.position.y, z: cellMesh.position.z,
+                };
+            }
+            const origPos = cellMesh.userData._origPos;
+            const NUDGE = 0.03; // very light — just a hint of movement
+
+            // Shared timeline so cell + number move as one unit
+            const tl = gsap.timeline();
+
+            gsap.killTweensOf(cellMesh.position);
+            // fromTo + yoyo: plays out then mathematically reverses to exact 'from' values
+            tl.fromTo(cellMesh.position,
+                { [axis]: origPos[axis] },
+                { [axis]: origPos[axis] - sign * NUDGE, duration: 0.14, ease: 'power2.out', repeat: 1, yoyo: true },
+                0
+            );
+
+            // Number group: identical animation added at timeline position 0 — locked in sync
+            if (groupRef.current) {
+                const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
+                if (numGroup) {
+                    if (!numGroup.userData._origPos) {
+                        numGroup.userData._origPos = {
+                            x: numGroup.position.x, y: numGroup.position.y, z: numGroup.position.z,
+                        };
+                    }
+                    const numOrig = numGroup.userData._origPos;
+                    gsap.killTweensOf(numGroup.position);
+                    tl.fromTo(numGroup.position,
+                        { [axis]: numOrig[axis] },
+                        { [axis]: numOrig[axis] - sign * NUDGE, duration: 0.14, ease: 'power2.out', repeat: 1, yoyo: true },
+                        0 // same start time = moves exactly with the cell
+                    );
+                }
+            }
+        });
+
+        prevErroredCellsRef.current = currentErroredCells;
     }, [mockBoardData, conflictedFaces, nodes, materials, theme]);
+
 
 
     const groupRef = useRef<any>(null);

@@ -39,7 +39,7 @@
 }
 
 :root[data-theme='light'] {
-  --color-bg: #edf2f9;
+  --color-bg: #DFC4A8;
   --color-surface: #ffffff;
   --color-surface-elevated: #f5f8fe;
   --color-border: rgba(30, 41, 59, 0.14);

@@ -32,13 +32,15 @@ const THEME_MATERIALS = {
         num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
     },
     light: {
-        cell: { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
-        locked: { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
-        fail: { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
-        fail_dark: { color: 0x7a1010, roughness: 0.38, metalness: 0.08, opacity: 1 },
-        base: { color: 0xE8DFD0, roughness: 0.5, metalness: 0.05 },
-        num_default: { color: 0xd4af37, roughness: 0.25, metalness: 0.85, emissive: 0xc49a00, emissiveIntensity: 0.4 },
-        num_error: { color: 0xffffff, roughness: 0.25, metalness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.3 }
+        cell: { color: 0xFEFCFA, roughness: 0.30, metalness: 0.06, opacity: 0.98 },
+        locked: { color: 0xF3F0EB, roughness: 0.25, metalness: 0.10, opacity: 1 },
+        fail: { color: 0xE85548, roughness: 0.30, metalness: 0.04, opacity: 1 },
+        fail_dark: { color: 0xBC3B2E, roughness: 0.35, metalness: 0.06, opacity: 1 },
+        base: { color: 0xEDEAE4, roughness: 0.5, metalness: 0.04 },
+        // Buttery gold — slightly de-saturated, glow dialed down to a barely-there hint
+        num_default: { color: 0xD0AD48, roughness: 0.30, metalness: 0.78, emissive: 0x8A6A10, emissiveIntensity: 0.12 },
+        // White on error cells — pops against the coral background; glow kept very faint
+        num_error:   { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 }
     }
 };
 
@@ -1809,8 +1811,10 @@ function CubeViewer() {
             {/* 3D Canvas */}
             <Canvas
                 camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}
-                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 1.0 }}
+                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 1.05 }}
             >
+                {/* Scene background — matches CSS --color-bg so there's no color mismatch at any frame */}
+                <color attach="background" args={[theme === 'dark' ? '#0A0A0A' : '#DFC4A8']} />
                 {theme === 'dark' ? (
                     <>
                         {/* Neutral gray hemisphere — no blue cast */}
@@ -1822,9 +1826,10 @@ function CubeViewer() {
                     </>
                 ) : (
                     <>
-                        <ambientLight intensity={0.65} />
-                        <directionalLight position={[5, 10, 5]} intensity={1.3} castShadow />
-                        <directionalLight position={[-4, 3, 3]} intensity={0.45} color={0xffe8c0} />
+                        {/* Warm ambient — tinted to complement the sandy background */}
+                        <ambientLight intensity={0.60} color={0xFFF4E8} />
+                        <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
+                        <directionalLight position={[-4, 3, 3]} intensity={0.40} color={0xffe8c0} />
                     </>
                 )}
                 <Suspense fallback={null}>
@@ -1845,11 +1850,11 @@ function CubeViewer() {
                     />
                     <ContactShadows
                         position={[0, -1.65, 0]}
-                        opacity={theme === 'dark' ? 0.55 : 0.38}
+                        opacity={theme === 'dark' ? 0.55 : 0.45}
                         scale={3.5}
                         blur={2.2}
                         far={2}
-                        color={theme === 'dark' ? '#0f172a' : '#8a6d4e'}
+                        color={theme === 'dark' ? '#0f172a' : '#7a5535'}
                     />
                 </Suspense>
 

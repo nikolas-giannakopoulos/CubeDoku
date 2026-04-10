@@ -22,23 +22,23 @@ import './UI.css';
 const THEME_MATERIALS = {
     dark: {
         // Glossy dark gray — darker than before, IBL gives it the sheen
-        cell:      { color: 0x363638, roughness: 0.18, metalness: 0.45, opacity: 1 },
-        locked:    { color: 0x2B2B30, roughness: 0.14, metalness: 0.55, opacity: 1 },
-        fail:      { color: 0xCC3333, roughness: 0.22, metalness: 0.18, opacity: 1 },
+        cell: { color: 0x363638, roughness: 0.18, metalness: 0.45, opacity: 1 },
+        locked: { color: 0x2B2B30, roughness: 0.14, metalness: 0.55, opacity: 1 },
+        fail: { color: 0xCC3333, roughness: 0.22, metalness: 0.18, opacity: 1 },
         fail_dark: { color: 0x7A1A1A, roughness: 0.28, metalness: 0.20, opacity: 1 },
-        base:      { color: 0x252527, roughness: 0.30, metalness: 0.40 },
+        base: { color: 0x252527, roughness: 0.30, metalness: 0.40 },
         // Numbers: clean crisp white — IBL provides specularity, minimal emissive for shadow visibility only
         num_default: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x333333, emissiveIntensity: 0.10 },
-        num_error:   { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
+        num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
     },
     light: {
-        cell:      { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
-        locked:    { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
-        fail:      { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
+        cell: { color: 0xFDFBF9, roughness: 0.35, metalness: 0.08, opacity: 0.98 },
+        locked: { color: 0xF3F1ED, roughness: 0.28, metalness: 0.12, opacity: 1 },
+        fail: { color: 0xbf2626, roughness: 0.35, metalness: 0.05, opacity: 1 },
         fail_dark: { color: 0x7a1010, roughness: 0.38, metalness: 0.08, opacity: 1 },
-        base:      { color: 0xE8DFD0, roughness: 0.5,  metalness: 0.05 },
+        base: { color: 0xE8DFD0, roughness: 0.5, metalness: 0.05 },
         num_default: { color: 0xd4af37, roughness: 0.25, metalness: 0.85, emissive: 0xc49a00, emissiveIntensity: 0.4 },
-        num_error:   { color: 0xffffff, roughness: 0.25, metalness: 0.8,  emissive: 0xffffff, emissiveIntensity: 0.3 }
+        num_error: { color: 0xffffff, roughness: 0.25, metalness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.3 }
     }
 };
 
@@ -309,12 +309,12 @@ function CubeModel({
     // pressDir: the INWARD direction for each face (cell moves deeper into the cube)
     const getFacePressAxis = (cellName: string): { axis: 'x' | 'y' | 'z'; sign: number } => {
         // Sign = OPPOSITE of the number offset direction (offset points outward; press goes inward)
-        if (cellName.startsWith('Front'))  return { axis: 'z', sign:  1 };  // offset -Z → outward -Z → press +Z
-        if (cellName.startsWith('Back'))   return { axis: 'z', sign: -1 };  // offset +Z → outward +Z → press -Z
-        if (cellName.startsWith('Left'))   return { axis: 'x', sign: -1 };  // offset +X → outward +X → press -X
-        if (cellName.startsWith('Right'))  return { axis: 'x', sign:  1 };  // offset -X → outward -X → press +X
-        if (cellName.startsWith('Top'))    return { axis: 'y', sign: -1 };  // offset +Y → outward +Y → press -Y
-        if (cellName.startsWith('Bottom')) return { axis: 'y', sign:  1 };  // offset -Y → outward -Y → press +Y
+        if (cellName.startsWith('Front')) return { axis: 'z', sign: 1 };  // offset -Z → outward -Z → press +Z
+        if (cellName.startsWith('Back')) return { axis: 'z', sign: -1 };  // offset +Z → outward +Z → press -Z
+        if (cellName.startsWith('Left')) return { axis: 'x', sign: -1 };  // offset +X → outward +X → press -X
+        if (cellName.startsWith('Right')) return { axis: 'x', sign: 1 };  // offset -X → outward -X → press +X
+        if (cellName.startsWith('Top')) return { axis: 'y', sign: -1 };  // offset +Y → outward +Y → press -Y
+        if (cellName.startsWith('Bottom')) return { axis: 'y', sign: 1 };  // offset -Y → outward -Y → press +Y
         return { axis: 'z', sign: 1 };
     };
 
@@ -418,27 +418,27 @@ function CubeModel({
         let rotation: [number, number, number] = [0, 0, 0];
 
         if (cellName.startsWith('Front')) {
-            offset = [0, 0, -0.15];
+            offset = [0, 0, -0.13];
             rotation = [Math.PI, 0, Math.PI];
         }
         if (cellName.startsWith('Back')) {
-            offset = [0, 0, 0.15];
+            offset = [0, 0, 0.13];
             rotation = [0, 0, 0];
         }
         if (cellName.startsWith('Left')) {
-            offset = [0.15, 0, 0];
+            offset = [0.13, 0, 0];
             rotation = [0, Math.PI / 2, 0];
         }
         if (cellName.startsWith('Right')) {
-            offset = [-0.15, 0, 0];
+            offset = [-0.13, 0, 0];
             rotation = [0, -Math.PI / 2, 0];
         }
         if (cellName.startsWith('Top')) {
-            offset = [0, 0.15, 0];
+            offset = [0, 0.13, 0];
             rotation = [Math.PI / 2, Math.PI, 0];
         }
         if (cellName.startsWith('Bottom')) {
-            offset = [0, -0.15, 0];
+            offset = [0, -0.13, 0];
             rotation = [Math.PI / 2, 0, Math.PI];
         }
 
@@ -1305,7 +1305,7 @@ function CubeViewer() {
             for (let r = 0; r < 3; r++) {
                 for (let c = 0; c < 3; c++) {
                     previousState.push(valueMap.get(`${face}_${r}_${c}`) || 0);
-                }
+                }   
             }
         });
 

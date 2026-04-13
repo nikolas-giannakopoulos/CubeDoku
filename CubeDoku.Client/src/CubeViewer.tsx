@@ -32,11 +32,12 @@ const THEME_MATERIALS = {
         num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
     },
     light: {
-        cell: { color: 0xFEFCFA, roughness: 0.30, metalness: 0.06, opacity: 0.98 },
-        locked: { color: 0xF3F0EB, roughness: 0.25, metalness: 0.10, opacity: 1 },
-        fail: { color: 0xE85548, roughness: 0.30, metalness: 0.04, opacity: 1 },
-        fail_dark: { color: 0xBC3B2E, roughness: 0.35, metalness: 0.06, opacity: 1 },
-        base: { color: 0xEDEAE4, roughness: 0.5, metalness: 0.04 },
+        // Low roughness + moderate metalness mirrors the dark-mode gloss formula
+        cell: { color: 0xFEFCFA, roughness: 0.14, metalness: 0.20, opacity: 0.98 },
+        locked: { color: 0xF3F0EB, roughness: 0.12, metalness: 0.24, opacity: 1 },
+        fail: { color: 0xE85548, roughness: 0.18, metalness: 0.10, opacity: 1 },
+        fail_dark: { color: 0xBC3B2E, roughness: 0.22, metalness: 0.12, opacity: 1 },
+        base: { color: 0xEDEAE4, roughness: 0.38, metalness: 0.10 },
         // Buttery gold — slightly de-saturated, glow dialed down to a barely-there hint
         num_default: { color: 0xD0AD48, roughness: 0.30, metalness: 0.78, emissive: 0x8A6A10, emissiveIntensity: 0.12 },
         // White on error cells — pops against the coral background; glow kept very faint
@@ -1827,7 +1828,7 @@ function CubeViewer() {
             {/* 3D Canvas */}
             <Canvas
                 camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}
-                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 1.05 }}
+                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 0.95 }}
             >
                 {/* Scene background — matches CSS --color-bg so there's no color mismatch at any frame */}
                 <color attach="background" args={[theme === 'dark' ? '#0A0A0A' : '#DFC4A8']} />
@@ -1843,17 +1844,19 @@ function CubeViewer() {
                 ) : (
                     <>
                         {/* Warm ambient — tinted to complement the sandy background */}
-                        <ambientLight intensity={0.60} color={0xFFF4E8} />
-                        <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
-                        <directionalLight position={[-4, 3, 3]} intensity={0.40} color={0xffe8c0} />
+                        <ambientLight intensity={0.45} color={0xFFF4E8} />
+                        <directionalLight position={[5, 10, 5]} intensity={0.9} castShadow />
+                        <directionalLight position={[-4, 3, 3]} intensity={0.25} color={0xffe8c0} />
                     </>
                 )}
                 <Suspense fallback={null}>
                     {/* Environment (IBL) — this is what gives the cube its gloss and metallic sheen.
                         Without this, MeshStandardMaterial ignores metalness/roughness entirely. */}
+                    {/* Both modes use the studio preset — crisp single-source IBL gives the glossy catchlight.
+                        Light mode uses slightly higher intensity so the specular pops on white cells. */}
                     <Environment
-                        preset={theme === 'dark' ? 'studio' : 'apartment'}
-                        environmentIntensity={theme === 'dark' ? 0.65 : 0.5}
+                        preset="studio"
+                        environmentIntensity={theme === 'dark' ? 0.65 : 0.55}
                     />
                     <CubeModel
                         selectedNumber={selectedNumber}

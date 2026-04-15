@@ -20,6 +20,8 @@ import './UI.css';
 import pressSfx from './assets/press.mp3';
 import errorSfx from './assets/error.mp3';
 
+const pressAudio = new Audio(pressSfx);
+const errorAudio = new Audio(errorSfx);
 
 const THEME_MATERIALS = {
     dark: {
@@ -231,6 +233,15 @@ function CubeModel({
         Object.keys(nodes).forEach(nodeName => {
             if (nodeName.startsWith('Asset_Num_') && nodes[nodeName]) {
                 nodes[nodeName].visible = false;
+            }
+            // Cleanup duplicate meshes exported from Blender
+            if (nodeName.includes('.001') || nodeName.endsWith('001')) {
+                if (nodes[nodeName]) {
+                    nodes[nodeName].visible = false;
+                    nodes[nodeName].position.set(9999, 9999, 9999);
+                    // Disable scale so it doesn't participate in anything
+                    nodes[nodeName].scale.set(0, 0, 0);
+                }
             }
         });
     }, [nodes]);
@@ -616,12 +627,14 @@ function CubeModel({
                     if (cellID) {
                         if (lockedCellIds.has(cellID)) return;
 
+                        // Always play press sound on any valid cell click
+                        pressAudio.currentTime = 0;
+                        pressAudio.play().catch(e => console.warn('Audio play failed', e));
+
                         // Game logic only — animation handled by onPointerDown/Up
                         if (selectedNumber === 'eraser') {
-                            new Audio(pressSfx).play().catch(e => console.warn('Audio play failed', e));
                             onMove(cellID, 0);
                         } else if (typeof selectedNumber === 'number') {
-                            new Audio(pressSfx).play().catch(e => console.warn('Audio play failed', e));
                             onMove(cellID, selectedNumber);
                         }
                     }
@@ -1318,7 +1331,8 @@ function CubeViewer() {
                 }
 
                 if (newLocalConflicts.length > 0 || newServerError) {
-                    new Audio(errorSfx).play().catch(e => console.warn('Audio play failed', e));
+                    errorAudio.currentTime = 0;
+                    errorAudio.play().catch(e => console.warn('Audio play failed', e));
                 }
 
                 // Phase B: purge cells on newly-resolved faces that the server did NOT

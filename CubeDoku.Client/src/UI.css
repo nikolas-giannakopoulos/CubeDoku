@@ -713,44 +713,54 @@
 }
 
 .auth-modal {
-    width: min(420px, 95vw);
+    width: min(400px, 95vw);
     background: var(--color-surface-overlay);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 18px;
+    border-radius: 14px;
+    padding: 28px 24px 20px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
 }
 
-.auth-modal h3 {
+.auth-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.auth-header h3 {
     margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
     color: var(--color-text-primary);
+    letter-spacing: -0.02em;
 }
 
-.auth-mode-switch {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 12px;
+.auth-close-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s ease;
 }
 
-.auth-mode-btn {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
+.auth-close-btn:hover {
     background: var(--color-surface-elevated);
     color: var(--color-text-primary);
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.auth-mode-btn.active {
-    border-color: var(--color-accent);
-    background: var(--color-accent-muted);
 }
 
 .auth-subtitle {
-    margin: 8px 0 14px;
+    margin: 0 0 18px;
     color: var(--color-text-secondary);
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
 }
 
 .auth-input {
@@ -762,27 +772,125 @@
     border-radius: 8px;
     background: var(--color-surface-elevated);
     color: var(--color-text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.auth-input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .auth-error {
-    margin: 4px 0 10px;
+    margin: -4px 0 10px;
     color: var(--color-error);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
 }
 
-.auth-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.auth-primary,
-.auth-secondary {
-    padding: 10px 12px;
+.auth-submit {
+    width: 100%;
+    padding: 11px 14px;
     border-radius: 8px;
-    border: 1px solid var(--color-border);
+    border: none;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
     cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.12s ease;
+    font-family: 'Inter', sans-serif;
 }
 
+.auth-submit:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.auth-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.auth-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* "or" divider */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+/* Google button */
+.auth-google-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.93rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.auth-google-btn:hover:not(:disabled) {
+    background: var(--color-surface);
+    border-color: var(--color-border-hover);
+}
+
+.auth-google-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Switch link */
+.auth-switch {
+    margin: 16px 0 0;
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--color-text-secondary);
+}
+
+.auth-switch-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-accent);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: opacity 0.12s ease;
+}
+
+.auth-switch-link:hover {
+    opacity: 0.8;
+}
+
+/* legacy selectors kept for safety */
 .auth-primary {
     background: var(--color-accent);
     border-color: var(--color-accent);

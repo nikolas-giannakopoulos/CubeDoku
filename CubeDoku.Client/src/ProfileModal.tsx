@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import { LuChevronLeft } from 'react-icons/lu';
+import { LuX } from 'react-icons/lu';
 import './ProfileModal.css';
 
 interface DifficultyStats {
@@ -39,19 +39,20 @@ export const ProfileModal = ({ isOpen, onClose, className, onLogout, onSettings 
     useEffect(() => {
         if (!isOpen) {
             setShowStats(false);
+            setStats(null);
             return;
         }
-        if (showStats && !stats && !loading) {
-            setLoading(true);
-            const headers: Record<string, string> = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            fetch('/api/user/stats', { headers })
-                .then(r => r.ok ? r.json() : null)
-                .then(data => setStats(data))
-                .catch(() => setStats(null))
-                .finally(() => setLoading(false));
-        }
-    }, [isOpen, showStats, stats, loading, token]);
+        // Always show stats view directly
+        setShowStats(true);
+        setLoading(true);
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        fetch('/api/user/stats', { headers })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => setStats(data))
+            .catch(() => setStats(null))
+            .finally(() => setLoading(false));
+    }, [isOpen, token]);
 
     const handleLogout = () => {
         logout();
@@ -66,8 +67,8 @@ export const ProfileModal = ({ isOpen, onClose, className, onLogout, onSettings 
             <div className="profile-stats-overlay" onClick={onClose}>
                 <div className="modal-content" onClick={e => e.stopPropagation()}>
                     <div className="modal-header">
-                        <button className="modal-back-btn" onClick={() => setShowStats(false)} aria-label="Back to profile menu">
-                            <LuChevronLeft size={20} />
+                        <button className="modal-back-btn" onClick={onClose} aria-label="Close">
+                            <LuX size={20} />
                         </button>
                         <h3>My Stats</h3>
                     </div>

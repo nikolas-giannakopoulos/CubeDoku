@@ -10,18 +10,13 @@ import { WelcomeModal } from './WelcomeModal';
 import { AuthModal } from './AuthModal';
 import { LeaderboardModal } from './LeaderboardModal';
 import { SettingsModal } from './SettingsModal';
-import { UserSettingsModal } from './UserSettingsModal';
 import { HowToPlayModal } from './HowToPlayModal';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
+import { pressAudio, errorAudio } from './audioManager';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import './UI.css';
-import pressSfx from './assets/press.mp3';
-import errorSfx from './assets/error.mp3';
-
-const pressAudio = new Audio(pressSfx);
-const errorAudio = new Audio(errorSfx);
 
 const THEME_MATERIALS = {
     dark: {
@@ -751,8 +746,7 @@ function CubeViewer() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-    const [isGameSettingsOpen, setIsGameSettingsOpen] = useState(false);
-    const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
     const [isHintConfirmOpen, setIsHintConfirmOpen] = useState(false);
     const [hintBusy, setHintBusy] = useState(false);
@@ -1745,18 +1739,11 @@ function CubeViewer() {
                 className="profile-modal"
                 isOpen={isProfileOpen}
                 onClose={() => setIsProfileOpen(false)}
-                onSettings={() => {
-                    setIsProfileOpen(false);
-                    setIsUserSettingsOpen(true);
-                }}
             />
             <SettingsModal
-                isOpen={isGameSettingsOpen}
-                onClose={() => setIsGameSettingsOpen(false)}
-            />
-            <UserSettingsModal
-                isOpen={isUserSettingsOpen}
-                onClose={() => setIsUserSettingsOpen(false)}
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                onOpenAuth={() => setIsAuthOpen(true)}
             />
             <AuthModal
                 isOpen={isAuthOpen}
@@ -1844,7 +1831,7 @@ function CubeViewer() {
             {/* Bottom Left Floating Panel */}
             <div className="bottom-left-panel">
                 <div className="extra-buttons">
-                    <button className="extra-btn" title="Settings" onClick={() => setIsGameSettingsOpen(true)}>
+                    <button className="extra-btn" title="Settings" onClick={() => setIsSettingsOpen(true)}>
                         <LuSettings size={20} />
                     </button>
                     <button className="extra-btn" title="GitHub" onClick={handleGithub}>

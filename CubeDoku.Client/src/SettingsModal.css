@@ -1,0 +1,173 @@
+/* ── Unified Settings Modal ─────────────────────────────── */
+
+.settings-modal-content {
+    min-width: 380px;
+}
+
+/* Tabs */
+.settings-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.settings-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.settings-tab:hover {
+    color: var(--color-text-primary);
+}
+
+.settings-tab.active {
+    background: var(--color-surface-overlay);
+    color: var(--color-text-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+/* Volume */
+.settings-volume-block {
+    margin-top: 4px;
+}
+
+.settings-volume-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.settings-volume-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.settings-volume-icon-btn:hover {
+    color: var(--color-text-primary);
+}
+
+.settings-volume-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 4px;
+    background: var(--color-border);
+    outline: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.settings-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.settings-volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 4px var(--color-accent-muted);
+}
+
+.settings-volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+}
+
+.settings-volume-pct {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    width: 44px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Footer divider + logout */
+.settings-footer-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 8px 0 2px;
+}
+
+.settings-logout-btn {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid rgba(220, 60, 60, 0.35);
+    border-radius: 10px;
+    background: rgba(220, 60, 60, 0.08);
+    color: #e05555;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.settings-logout-btn:hover {
+    background: rgba(220, 60, 60, 0.18);
+    border-color: rgba(220, 60, 60, 0.55);
+    color: #ff6666;
+}
+
+/* Guest CTA */
+.settings-guest-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 8px 8px;
+}
+
+.settings-guest-text {
+    color: var(--color-text-secondary);
+    font-size: 0.92rem;
+    text-align: center;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.settings-login-btn {
+    padding: 12px 28px;
+    border: 1px solid var(--color-accent);
+    border-radius: 10px;
+    background: var(--color-accent-muted);
+    color: var(--color-text-primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.settings-login-btn:hover {
+    background: var(--color-accent);
+    color: #fff;
+}

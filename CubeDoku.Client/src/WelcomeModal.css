@@ -4,7 +4,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.90);
+    background: var(--color-overlay-backdrop);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
@@ -26,7 +26,7 @@
 
 .welcome-modal {
     position: relative;
-    background: rgba(26, 26, 26, 0.6);
+    background: var(--color-panel-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--color-border);
@@ -91,7 +91,7 @@
     position: absolute;
     top: 48px;
     right: 0;
-    background: rgba(26, 26, 26, 0.95);
+    background: var(--color-surface-overlay);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--color-border);
@@ -127,7 +127,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--color-overlay-backdrop);
     backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
@@ -136,7 +136,7 @@
 }
 
 .leaderboard-content {
-    background: rgba(26, 26, 26, 0.95);
+    background: var(--color-surface-overlay);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--color-border);
@@ -184,7 +184,7 @@
 }
 
 .lb-tab:not(.active):hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-surface-elevated);
     color: var(--color-text-primary);
 }
 
@@ -216,7 +216,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border-bottom: none;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-surface-elevated);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -226,7 +226,7 @@
     padding: 10px 10px;
     border-bottom: none;
     color: var(--color-text-primary);
-    background: rgba(255, 255, 255, 0.04);
+    background: transparent;
 }
 
 .leaderboard-table tbody tr td:first-child {
@@ -306,7 +306,7 @@
 
 /* Rules Section */
 .welcome-rules {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--color-surface-elevated);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
@@ -383,7 +383,7 @@
     background: var(--color-surface);
     border-color: white;
     border-width: 2px;
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 24px var(--color-border);
 }
 
 .difficulty-icon {
@@ -422,13 +422,13 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .start-button:hover {
     background: var(--color-text-secondary);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px var(--color-border);
 }
 
 .start-button:active {

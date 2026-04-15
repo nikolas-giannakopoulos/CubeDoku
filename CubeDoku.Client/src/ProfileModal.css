@@ -16,7 +16,7 @@
 .profile-stats-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--color-overlay-backdrop);
     backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
@@ -229,7 +229,7 @@
 .verify-popup-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--color-overlay-backdrop);
     backdrop-filter: blur(5px);
     display: flex;
     align-items: center;

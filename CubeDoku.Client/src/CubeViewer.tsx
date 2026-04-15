@@ -17,6 +17,8 @@ import { useTheme } from './context/ThemeContext';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import './UI.css';
+import pressSfx from './assets/press.mp3';
+import errorSfx from './assets/error.mp3';
 
 
 const THEME_MATERIALS = {
@@ -616,8 +618,10 @@ function CubeModel({
 
                         // Game logic only — animation handled by onPointerDown/Up
                         if (selectedNumber === 'eraser') {
+                            new Audio(pressSfx).play().catch(e => console.warn('Audio play failed', e));
                             onMove(cellID, 0);
                         } else if (typeof selectedNumber === 'number') {
+                            new Audio(pressSfx).play().catch(e => console.warn('Audio play failed', e));
                             onMove(cellID, selectedNumber);
                         }
                     }
@@ -1291,22 +1295,32 @@ function CubeViewer() {
                 const resolvedFaces = new Set(
                     [...previousConflictedFaces].filter(f => !newConflictedFaces.has(f))
                 );
+                const newLocalConflicts = [...newConflictedFaces].filter(f => !previousConflictedFaces.has(f));
 
                 // Step 3 — Update the persistent error tracker.
                 // Phase A: collect which cells the server re-confirmed as Error in this move.
                 const confirmedErrorsThisMove = new Set<string>();
+                let newServerError = false;
                 if (data.updatedCells) {
                     data.updatedCells.forEach((update: any) => {
                         const id = `${update.face}_${update.row}_${update.column}`;
                         if (update.state === 'Error') {
                             confirmedErrorsThisMove.add(id);
-                            if (!serverErrorsRef.current.has(id)) mistakesRef.current++; // new mistake
+                            if (!serverErrorsRef.current.has(id)) {
+                                mistakesRef.current++; // new mistake
+                                newServerError = true;
+                            }
                             serverErrorsRef.current.add(id);
                         } else {
                             serverErrorsRef.current.delete(id); // server says valid
                         }
                     });
                 }
+
+                if (newLocalConflicts.length > 0 || newServerError) {
+                    new Audio(errorSfx).play().catch(e => console.warn('Audio play failed', e));
+                }
+
                 // Phase B: purge cells on newly-resolved faces that the server did NOT
                 // re-confirm as Error — those were stale face-conflict errors, now cleared.
                 if (resolvedFaces.size > 0) {

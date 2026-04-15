@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
-import { MdLeaderboard } from 'react-icons/md';
+import { MdLeaderboard, MdPerson } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp } from 'react-icons/lu';
 import { FaGithub } from 'react-icons/fa';
 import { handleGithub } from './extraHandlers';
@@ -1598,7 +1598,17 @@ function CubeViewer() {
                         {Math.floor(gameTimer / 60).toString().padStart(2, '0')}:{(gameTimer % 60).toString().padStart(2, '0')}
                         {currentScore > 0 && <span style={{ marginLeft: '16px', color: 'var(--color-accent)' }}>⭐ {currentScore}</span>}
                     </p>
-                    <img src="profile.svg" alt="Profile" className="profile-icon" onClick={() => { setIsProfileOpen(!isProfileOpen) }} />
+                    {isLoggedIn ? (
+                        <button className="icon-button stats-btn" onClick={() => setIsProfileOpen(true)}>
+                            <MdPerson size={20} />
+                            <span>My Stats</span>
+                        </button>
+                    ) : (
+                        <button className="icon-button login-btn" onClick={() => setIsAuthOpen(true)}>
+                            <MdPerson size={20} />
+                            <span>Log In</span>
+                        </button>
+                    )}
                 </div>
             </div>
             <WelcomeModal
@@ -1854,71 +1864,73 @@ function CubeViewer() {
                 </div>
             </div>
             {/* 3D Canvas */}
-            <Canvas
-                camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}
-                gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 0.95 }}
-            >
-                {/* Scene background — matches CSS --color-bg so there's no color mismatch at any frame */}
-                <color attach="background" args={[theme === 'dark' ? '#0A0A0A' : '#DFC4A8']} />
-                {theme === 'dark' ? (
-                    <>
-                        {/* Neutral gray hemisphere — no blue cast */}
-                        <hemisphereLight args={[0xffffff, 0x3A3A3A, 0.9]} />
-                        {/* Key light */}
-                        <directionalLight position={[10, 20, 15]} intensity={1.8} />
-                        {/* Left fill */}
-                        <directionalLight position={[-6, 4, 4]} intensity={0.7} />
-                    </>
-                ) : (
-                    <>
-                        {/* Warm ambient — tinted to complement the sandy background */}
-                        <ambientLight intensity={0.45} color={0xFFF4E8} />
-                        <directionalLight position={[5, 10, 5]} intensity={0.9} castShadow />
-                        <directionalLight position={[-4, 3, 3]} intensity={0.25} color={0xffe8c0} />
-                    </>
-                )}
-                <Suspense fallback={null}>
-                    {/* Environment (IBL) — this is what gives the cube its gloss and metallic sheen.
+            <div className="cube-container">
+                <Canvas
+                    camera={{ position: DEFAULT_CAMERA_POSITION, fov: 46 }}
+                    gl={{ toneMapping: 4 /* ACESFilmicToneMapping */, toneMappingExposure: theme === 'dark' ? 1.2 : 0.95 }}
+                >
+                    {/* Scene background — matches CSS --color-bg so there's no color mismatch at any frame */}
+                    <color attach="background" args={[theme === 'dark' ? '#0A0A0A' : '#DFC4A8']} />
+                    {theme === 'dark' ? (
+                        <>
+                            {/* Neutral gray hemisphere — no blue cast */}
+                            <hemisphereLight args={[0xffffff, 0x3A3A3A, 0.9]} />
+                            {/* Key light */}
+                            <directionalLight position={[10, 20, 15]} intensity={1.8} />
+                            {/* Left fill */}
+                            <directionalLight position={[-6, 4, 4]} intensity={0.7} />
+                        </>
+                    ) : (
+                        <>
+                            {/* Warm ambient — tinted to complement the sandy background */}
+                            <ambientLight intensity={0.45} color={0xFFF4E8} />
+                            <directionalLight position={[5, 10, 5]} intensity={0.9} castShadow />
+                            <directionalLight position={[-4, 3, 3]} intensity={0.25} color={0xffe8c0} />
+                        </>
+                    )}
+                    <Suspense fallback={null}>
+                        {/* Environment (IBL) — this is what gives the cube its gloss and metallic sheen.
                         Without this, MeshStandardMaterial ignores metalness/roughness entirely. */}
-                    {/* Both modes use the studio preset — crisp single-source IBL gives the glossy catchlight.
+                        {/* Both modes use the studio preset — crisp single-source IBL gives the glossy catchlight.
                         Light mode uses slightly higher intensity so the specular pops on white cells. */}
-                    <Environment
-                        preset="studio"
-                        environmentIntensity={theme === 'dark' ? 0.65 : 0.55}
-                    />
-                    <CubeModel
-                        selectedNumber={selectedNumber}
-                        mockBoardData={mockBoardData}
-                        onMove={(cellId, val) => handleMove(cellId, val)}
-                        conflictedFaces={conflictedFaces}
-                        lockedCellIds={lockedCellIds}
-                        programmaticPressCellId={programmaticPressCellId}
-                        cellNotes={cellNotes}
-                    />
-                    <ContactShadows
-                        position={[0, -1.65, 0]}
-                        opacity={theme === 'dark' ? 0.55 : 0.45}
-                        scale={3.5}
-                        blur={2.2}
-                        far={2}
-                        color={theme === 'dark' ? '#0f172a' : '#7a5535'}
-                    />
-                </Suspense>
+                        <Environment
+                            preset="studio"
+                            environmentIntensity={theme === 'dark' ? 0.65 : 0.55}
+                        />
+                        <CubeModel
+                            selectedNumber={selectedNumber}
+                            mockBoardData={mockBoardData}
+                            onMove={(cellId, val) => handleMove(cellId, val)}
+                            conflictedFaces={conflictedFaces}
+                            lockedCellIds={lockedCellIds}
+                            programmaticPressCellId={programmaticPressCellId}
+                            cellNotes={cellNotes}
+                        />
+                        <ContactShadows
+                            position={[0, -1.65, 0]}
+                            opacity={theme === 'dark' ? 0.55 : 0.45}
+                            scale={3.5}
+                            blur={2.2}
+                            far={2}
+                            color={theme === 'dark' ? '#0f172a' : '#7a5535'}
+                        />
+                    </Suspense>
 
-                <OrbitControls
-                    ref={orbitControlsRef}
-                    makeDefault
-                    enableDamping
-                    dampingFactor={0.08}
-                    rotateSpeed={0.5}
-                    minDistance={6.5}
-                    maxDistance={16}
-                    minPolarAngle={0.18}
-                    maxPolarAngle={Math.PI - 0.18}
-                    enablePan={false}
-                    target={[0, 0, 0]}
-                />
-            </Canvas>
+                    <OrbitControls
+                        ref={orbitControlsRef}
+                        makeDefault
+                        enableDamping
+                        dampingFactor={0.08}
+                        rotateSpeed={0.5}
+                        minDistance={6.5}
+                        maxDistance={16}
+                        minPolarAngle={0.18}
+                        maxPolarAngle={Math.PI - 0.18}
+                        enablePan={false}
+                        target={[0, 0, 0]}
+                    />
+                </Canvas>
+            </div>
 
             <HowToPlayModal
                 isOpen={isHowToPlayOpen}

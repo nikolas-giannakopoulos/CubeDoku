@@ -807,5 +807,5 @@
 
 .left-panel, .right-panel, .right-panel-2, .top-bar, .bottom-left-panel {
     pointer-events: auto;
-    z-index: 10;
+    z-index: 110;
 }

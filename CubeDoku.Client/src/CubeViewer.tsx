@@ -148,6 +148,10 @@ function CubeModel({
             materials.Cell_Fail = materials['Cell_Material'].clone();
             materials.Cell_Fail.name = 'Cell_Fail';
         }
+        if (materials['Cell_Material'] && !materials.Cell_Fail_Dark) {
+            materials.Cell_Fail_Dark = materials['Cell_Material'].clone();
+            materials.Cell_Fail_Dark.name = 'Cell_Fail_Dark';
+        }
         if (materials['Cell_Material'] && !materials.Cell_Locked) {
             materials.Cell_Locked = materials['Cell_Material'].clone();
             materials.Cell_Locked.name = 'Cell_Locked';
@@ -197,6 +201,7 @@ function CubeModel({
         tweenMatDef(materials.Cell_Material, config.cell);
         tweenMatDef(materials.Cell_Locked, config.locked);
         tweenMatDef(materials.Cell_Fail, config.fail);
+        tweenMatDef(materials.Cell_Fail_Dark, config.fail_dark);
         tweenMatDef(materials.Cube_Base, config.base);
 
         for (let i = 1; i <= 9; i++) {
@@ -289,11 +294,6 @@ function CubeModel({
                         currentErroredCells.add(nodeName);
                     } else {
                         // Backplate / structural mesh on this face → subtle dark red
-                        if (!materials.Cell_Fail_Dark) {
-                            materials.Cell_Fail_Dark = materials.Cell_Fail.clone();
-                            materials.Cell_Fail_Dark.name = 'Cell_Fail_Dark';
-                        }
-                        tweenMatDef(materials.Cell_Fail_Dark, THEME_MATERIALS[theme].fail_dark);
                         (node as any).material = materials.Cell_Fail_Dark;
                     }
                 }
@@ -310,11 +310,6 @@ function CubeModel({
                 // Also turn this specific cell's backplate darker red (handles individual corners/edges)
                 const backNode = nodes[`${data.id}_Back`] || nodes[`${data.id}_Backplate`];
                 if (backNode && (backNode as any).material) {
-                    if (!materials.Cell_Fail_Dark) {
-                        materials.Cell_Fail_Dark = materials.Cell_Fail.clone();
-                        materials.Cell_Fail_Dark.name = 'Cell_Fail_Dark';
-                    }
-                    tweenMatDef(materials.Cell_Fail_Dark, THEME_MATERIALS[theme].fail_dark);
                     (backNode as any).material = materials.Cell_Fail_Dark;
                 }
             }

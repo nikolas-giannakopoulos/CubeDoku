@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useModalTransition } from './useModalTransition';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from './context/AuthContext';
 import './WelcomeModal.css';
@@ -75,7 +76,8 @@ export const LeaderboardModal = ({
             .finally(() => setLoading(false));
     }, [isOpen]);
 
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     const rows = allData.filter(e => e.difficulty === tab);
     const shouldPin = pinnedEntry && pinnedEntry.difficulty === tab;
@@ -90,8 +92,8 @@ export const LeaderboardModal = ({
     const displayedRows = shouldPin && !hasPinned ? [pinnedEntry, ...rows] : rows;
 
     return (
-        <div className="leaderboard-modal" onClick={onClose}>
-            <div className="leaderboard-content" onClick={e => e.stopPropagation()}>
+        <div className={`leaderboard-modal${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
+            <div className={`leaderboard-content${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                 <h2>Leaderboard</h2>
 
                 <div className="lb-tabs">

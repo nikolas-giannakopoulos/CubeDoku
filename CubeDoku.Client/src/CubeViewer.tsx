@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
+import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp } from 'react-icons/lu';
 import { FaGithub } from 'react-icons/fa';
@@ -786,6 +787,11 @@ function CubeViewer() {
     const [hasCompletionAuthSuccess, setHasCompletionAuthSuccess] = useState(false);
     const orbitControlsRef = useRef<any>(null);
     const hintRotateRafRef = useRef<number | null>(null);
+
+    // Modal transition hooks for inline modals
+    const confirmResetT  = useModalTransition(isConfirmResetOpen);
+    const hintConfirmT   = useModalTransition(isHintConfirmOpen);
+    const completionT    = useModalTransition(!!completionSummary);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -1612,9 +1618,9 @@ function CubeViewer() {
             />
 
             {/* Start Over Confirmation Dialog */}
-            {isConfirmResetOpen && (
-                <div className="confirm-reset-overlay" onClick={() => setIsConfirmResetOpen(false)}>
-                    <div className="confirm-reset-modal" onClick={e => e.stopPropagation()}>
+            {confirmResetT.shouldRender && (
+                <div className={`confirm-reset-overlay${confirmResetT.isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={() => setIsConfirmResetOpen(false)}>
+                    <div className={`confirm-reset-modal${confirmResetT.isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                         <div className="confirm-reset-icon">⚠️</div>
                         <h2>Start Over?</h2>
                         <p>All your current progress will be lost and cannot be recovered.</p>
@@ -1633,9 +1639,9 @@ function CubeViewer() {
                 </div>
             )}
 
-            {isHintConfirmOpen && (
-                <div className="confirm-reset-overlay" onClick={() => !hintBusy && setIsHintConfirmOpen(false)}>
-                    <div className="confirm-reset-modal" onClick={e => e.stopPropagation()}>
+            {hintConfirmT.shouldRender && (
+                <div className={`confirm-reset-overlay${hintConfirmT.isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={() => !hintBusy && setIsHintConfirmOpen(false)}>
+                    <div className={`confirm-reset-modal${hintConfirmT.isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                         <div className="confirm-reset-icon">💡</div>
                         <h2>Use A Hint?</h2>
                         <p>This will place one number for you and lock that cell as a clue.</p>
@@ -1652,9 +1658,9 @@ function CubeViewer() {
                 </div>
             )}
 
-            {completionSummary && (
-                <div className="complete-overlay" onClick={() => setCompletionSummary(null)}>
-                    <div className="complete-modal" onClick={e => e.stopPropagation()}>
+            {completionT.shouldRender && (
+                <div className={`complete-overlay${completionT.isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={() => setCompletionSummary(null)}>
+                    <div className={`complete-modal${completionT.isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                         <h2>Puzzle Complete</h2>
                         <p className="complete-subtitle">
                             {completionSummary.difficulty} Puzzle | {completionSummary.puzzleDate}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useModalTransition } from './useModalTransition';
 import { useGoogleLogin } from '@react-oauth/google';
 import { LuX } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc';
@@ -32,7 +33,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         onError: () => setError('Google login failed.'),
     });
 
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     const switchMode = (next: 'login' | 'signup') => {
         setMode(next);
@@ -65,8 +67,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     };
 
     return (
-        <div className="auth-overlay" onClick={onClose}>
-            <div className="auth-modal" onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
+        <div className={`auth-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
+            <div className={`auth-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 {/* Header */}
                 <div className="auth-header">
                     <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>

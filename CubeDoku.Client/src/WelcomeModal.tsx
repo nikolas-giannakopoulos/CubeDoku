@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useModalTransition } from './useModalTransition';
 import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
@@ -63,7 +64,8 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
         }
     };
 
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     const handleDifficultySelect = async (difficulty: 'Classic' | 'BrainTerror') => {
         try {
@@ -87,8 +89,8 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
     };
 
     return (
-        <div className="welcome-modal-overlay">
-            <div className="welcome-modal">
+        <div className={`welcome-modal-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`}>
+            <div className={`welcome-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`}>
                 {/* Top Right Buttons */}
                 <div className="welcome-top-buttons">
                     <button className="welcome-icon-btn" title={isLoggedIn ? "User Menu" : "Sign Up"} onClick={handleUserClick}>

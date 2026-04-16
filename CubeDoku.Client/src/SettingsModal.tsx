@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useModalTransition } from './useModalTransition';
 import { LuX, LuVolume2, LuVolumeX } from 'react-icons/lu';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
@@ -230,11 +231,12 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
         onClose();
     };
 
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     return (
-        <div className="profile-stats-overlay" onClick={onClose}>
-            <div className="modal-content settings-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={`profile-stats-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
+            <div className={`modal-content settings-modal-content${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div className="modal-header">
                     <button className="modal-back-btn" onClick={onClose} aria-label="Close settings">

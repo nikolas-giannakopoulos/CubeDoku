@@ -1,4 +1,5 @@
 import { LuX } from 'react-icons/lu';
+import { useModalTransition } from './useModalTransition';
 import './HowToPlayModal.css';
 
 interface HowToPlayModalProps {
@@ -7,11 +8,12 @@ interface HowToPlayModalProps {
 }
 
 export const HowToPlayModal = ({ isOpen, onClose }: HowToPlayModalProps) => {
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     return (
-        <div className="howto-overlay" onClick={onClose}>
-            <div className="howto-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="How to Play">
+        <div className={`howto-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
+            <div className={`howto-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="How to Play">
                 <button className="howto-close-btn" aria-label="Close How to Play" onClick={onClose}>
                     <LuX size={20} />
                 </button>

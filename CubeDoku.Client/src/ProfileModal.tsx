@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useModalTransition } from './useModalTransition';
 import { useAuth } from './context/AuthContext';
 import { LuX } from 'react-icons/lu';
 import './ProfileModal.css';
@@ -60,12 +61,13 @@ export const ProfileModal = ({ isOpen, onClose, className, onLogout, onSettings 
         onClose();
     };
 
-    if (!isOpen) return null;
+    const { shouldRender, isClosing } = useModalTransition(isOpen);
+    if (!shouldRender) return null;
 
     if (showStats) {
         return (
-            <div className="profile-stats-overlay" onClick={onClose}>
-                <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className={`profile-stats-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
+                <div className={`modal-content${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                     <div className="modal-header">
                         <button className="modal-back-btn" onClick={onClose} aria-label="Close">
                             <LuX size={20} />

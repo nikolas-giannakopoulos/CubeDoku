@@ -152,3 +152,34 @@ button:focus-visible {
 .text-tertiary {
   color: var(--color-text-tertiary);
 }
+
+/* ── Global Modal Transition Animations ─────────────────────────── */
+@keyframes _modal-panel-in {
+  from { opacity: 0; transform: translateY(52px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+@keyframes _modal-panel-out {
+  from { opacity: 1; transform: translateY(0)      scale(1);    }
+  to   { opacity: 0; transform: translateY(-36px)  scale(0.97); }
+}
+@keyframes _modal-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes _modal-overlay-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.modal-panel-enter {
+  animation: _modal-panel-in 0.38s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+.modal-panel-exit {
+  animation: _modal-panel-out 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+}
+.modal-overlay-enter {
+  animation: _modal-overlay-in 0.22s ease both;
+}
+.modal-overlay-exit {
+  animation: _modal-overlay-out 0.26s ease both;
+}

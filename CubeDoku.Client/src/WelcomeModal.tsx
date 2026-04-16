@@ -5,24 +5,10 @@ import brainterrorIcon from './assets/brainterror.png';
 import { FaUser } from 'react-icons/fa';
 import { MdLeaderboard } from 'react-icons/md';
 import { LuChevronLeft } from 'react-icons/lu';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
 import { SettingsModal } from './SettingsModal';
 import './ProfileModal.css';
-
-interface DifficultyStats {
-    games: number;
-    bestScore: number;
-    bestTime: number;
-    totalMistakes: number;
-}
-
-interface StatsData {
-    totalGames: number;
-    classic: DifficultyStats;
-    brainTerror: DifficultyStats;
-}
 
 interface CellDTO {
     face: string;
@@ -34,53 +20,30 @@ interface CellDTO {
 export interface WelcomeModalProps {
     isOpen: boolean;
     onDifficultySelect: (difficulty: 'Classic' | 'BrainTerror', lockedCells: CellDTO[]) => void;
+    onAuthClick?: () => void;
 }
 
-export const WelcomeModal = ({ isOpen, onDifficultySelect }: WelcomeModalProps) => {
-    const { user, isLoggedIn, login, register, loginWithGoogle, logout, token } = useAuth();
+const formatTime = (seconds: number): string => {
+    if (!seconds) return '—';
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+};
+
+export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: WelcomeModalProps) => {
+    const { isLoggedIn, logout, token, user } = useAuth();
 
     const [selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [authView, setAuthView] = useState<'default' | 'signup' | 'login'>('default');
-    const [stats, setStats] = useState<StatsData | null>(null);
+    const [stats, setStats] = useState<any | null>(null);
     const [statsLoading, setStatsLoading] = useState(false);
-
-    // Form state
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [authError, setAuthError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Leaderboard state
+    const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const handleStart = () => handleDifficultySelect(selectedDifficulty);
 
-    const handleLeaderboardClick = () => setIsLeaderboardOpen(true);
-
     const handleUserClick = () => setIsUserMenuOpen(!isUserMenuOpen);
-
-    const formatTime = (seconds: number): string => {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m}:${s.toString().padStart(2, '0')}`;
-    };
-
-    const handleAuthClick = (view: 'signup' | 'login') => {
-        setAuthView(view);
-        setIsUserMenuOpen(false);
-        setAuthError('');
-    };
-
-    const handleBackToMenu = () => {
-        setAuthView('default');
-        setAuthError('');
-        setEmail(''); setPassword(''); setUsername(''); setConfirmPassword('');
-    };
 
     const handleOpenStats = async () => {
         setIsUserMenuOpen(false);
@@ -100,41 +63,6 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect }: WelcomeModalProps) 
         }
     };
 
-    const handleSubmit = async () => {
-        setAuthError('');
-        setIsLoading(true);
-        try {
-            if (authView === 'signup') {
-                if (password !== confirmPassword) {
-                    setAuthError('Passwords do not match.');
-                    return;
-                }
-                await register(username, email, password);
-            } else {
-                await login(email, password);
-            }
-            handleBackToMenu();
-        } catch (err: any) {
-            setAuthError(err.message || 'Something went wrong.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const googleLogin = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                // Pass access token to backend - backend verifies via Google userinfo API
-                await loginWithGoogle(tokenResponse.access_token);
-                handleBackToMenu();
-            } catch {
-                setAuthError('Google login failed.');
-            }
-        },
-        onError: () => setAuthError('Google login failed.'),
-    });
-
-    // Guard MUST be after all hooks (Rules of Hooks).
     if (!isOpen) return null;
 
     const handleDifficultySelect = async (difficulty: 'Classic' | 'BrainTerror') => {
@@ -163,9 +91,6 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect }: WelcomeModalProps) 
             <div className="welcome-modal">
                 {/* Top Right Buttons */}
                 <div className="welcome-top-buttons">
-                    <button className="welcome-icon-btn" title="Leaderboard" onClick={handleLeaderboardClick}>
-                        <MdLeaderboard size={20} />
-                    </button>
                     <button className="welcome-icon-btn" title={isLoggedIn ? "User Menu" : "Sign Up"} onClick={handleUserClick}>
                         <FaUser size={18} />
                     </button>
@@ -174,17 +99,16 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect }: WelcomeModalProps) 
                     {isUserMenuOpen && (
                         <div className="user-dropdown">
                             {!isLoggedIn ? (
-                                <div className="user-dropdown-item" onClick={() => handleAuthClick('signup')}>
+                                <div className="user-dropdown-item" onClick={() => {
+                                    setIsUserMenuOpen(false);
+                                    if (onAuthClick) onAuthClick();
+                                }}>
                                     Sign Up / Login
                                 </div>
                             ) : (
                                 <>
                                     <div className="user-dropdown-item" onClick={handleOpenStats}>
                                         My Stats
-                                    </div>
-                                    <div className="user-dropdown-divider"></div>
-                                    <div className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); setIsSettingsOpen(true); }}>
-                                        Settings
                                     </div>
                                     <div className="user-dropdown-divider"></div>
                                     <div className="user-dropdown-item user-dropdown-logout" onClick={() => { logout(); setIsUserMenuOpen(false); }}>
@@ -199,113 +123,55 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect }: WelcomeModalProps) 
                 {/* Header */}
                 <div className="welcome-header">
                     <h1>CubeDoku</h1>
-                    <p className="subtitle">Master the Cube</p>
+                    <p className="subtitle">3D Sudoku on a Rubik's Cube</p>
                 </div>
 
-                {authView === 'default' ? (
-                    <>
-                        {/* Rules Section */}
-                        <div className="welcome-rules">
-                            <h2>Rules</h2>
-                            <ul>
-                                <li>Each face must contain numbers 1-9 without repeats</li>
-                                <li>Each edge and corner must sum to 12</li>
-                            </ul>
-                        </div>
+                <div className="welcome-content">
+                    <div className="welcome-rules">
+                        <h2>How to Play</h2>
+                        <ul>
+                            <li><strong>The Board:</strong> A 3D cube with 6 faces (3x3 each).</li>
+                            <li><strong>The Rules:</strong>
+                                <ul>
+                                    <li>Every face must contain numbers 1-9.</li>
+                                    <li>Every continuous band around the cube must not contain duplicate numbers.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Controls:</strong> Left-click and drag to rotate. Scroll to zoom. Click a number (right), then a cell to place it.</li>
+                        </ul>
+                    </div>
 
-                        {/* Difficulty Selection */}
-                        <div className="welcome-difficulty">
-                            <h2>Select Difficulty</h2>
-                            <div className="difficulty-buttons">
-                                <button
-                                    className={`difficulty-btn ${selectedDifficulty === 'Classic' ? 'selected' : ''}`}
-                                    onClick={() => setSelectedDifficulty('Classic')}
-                                >
-                                    <div className="difficulty-icon"><img src={classicIcon} alt="Classic" /></div>
-                                    <div className="difficulty-name">Classic</div>
-                                </button>
-                                <button
-                                    className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
-                                    onClick={() => setSelectedDifficulty('BrainTerror')}
-                                >
-                                    <div className="difficulty-icon"><img src={brainterrorIcon} alt="Brain Terror" /></div>
-                                    <div className="difficulty-name">Brain Terror</div>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Start Button */}
-                        <button className="start-button" onClick={handleStart}>
-                            Start Game
-                        </button>
-                    </>
-                ) : (
-                    <div className="auth-container">
-                        <h2>{authView === 'signup' ? 'Create Account' : 'Welcome Back'}</h2>
-
-                        <div className="auth-form">
-                            {authView === 'signup' && (
-                                <input
-                                    type="text"
-                                    placeholder="Username"
-                                    className="auth-input"
-                                    value={username}
-                                    onChange={e => setUsername(e.target.value)}
-                                />
-                            )}
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                className="auth-input"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                            />
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                className="auth-input"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                            />
-                            {authView === 'signup' && (
-                                <input
-                                    type="password"
-                                    placeholder="Confirm Password"
-                                    className="auth-input"
-                                    value={confirmPassword}
-                                    onChange={e => setConfirmPassword(e.target.value)}
-                                />
-                            )}
-
-                            {authError && <div className="auth-error">{authError}</div>}
-
-                            <button className="auth-action-btn" onClick={handleSubmit} disabled={isLoading}>
-                                {isLoading ? 'Loading...' : authView === 'signup' ? 'Sign Up' : 'Log In'}
+                    <div className="welcome-difficulty">
+                        <h2>Select Difficulty</h2>
+                        <div className="difficulty-buttons">
+                            <button
+                                className={`difficulty-btn ${selectedDifficulty === 'Classic' ? 'selected' : ''}`}
+                                onClick={() => setSelectedDifficulty('Classic')}
+                            >
+                                <div className="difficulty-icon">
+                                    <img src={classicIcon} alt="Classic" />
+                                </div>
+                                <div className="difficulty-name">Classic</div>
+                                <div className="difficulty-desc">Standard rules. Good for beginners.</div>
                             </button>
-
-                            <div className="auth-divider"><span>or</span></div>
-
-                            <button className="auth-google-btn" onClick={() => googleLogin()}>
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-                                Continue with Google
+                            <button
+                                className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
+                                onClick={() => setSelectedDifficulty('BrainTerror')}
+                            >
+                                <div className="difficulty-icon">
+                                    <img src={brainterrorIcon} alt="Brain Terror" />
+                                </div>
+                                <div className="difficulty-name">Brain Terror</div>
+                                <div className="difficulty-desc">Fewer clues. For truly deranged minds.</div>
                             </button>
-
-                            <div className="auth-switch">
-                                {authView === 'signup' ? (
-                                    <p>Already have an account? <span onClick={() => setAuthView('login')}>Log In</span></p>
-                                ) : (
-                                    <p>Don't have an account? <span onClick={() => setAuthView('signup')}>Sign Up</span></p>
-                                )}
-                            </div>
-
-                            <div className="auth-back">
-                                <span onClick={handleBackToMenu}>Back to Menu</span>
-                            </div>
                         </div>
                     </div>
-                )}
-            </div>
 
+                    <button className="start-button" onClick={handleStart}>
+                        Start Puzzle
+                    </button>
+                </div>
+            </div>
             {/* Leaderboard Modal */}
             <LeaderboardModal
                 isOpen={isLeaderboardOpen}

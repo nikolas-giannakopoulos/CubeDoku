@@ -1608,6 +1608,7 @@ function CubeViewer() {
             <WelcomeModal
                 isOpen={isWelcomeOpen}
                 onDifficultySelect={handleDifficultySelect}
+                onAuthClick={() => setIsAuthOpen(true)}
             />
 
             {/* Start Over Confirmation Dialog */}

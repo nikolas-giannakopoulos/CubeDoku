@@ -938,15 +938,17 @@ function CubeViewer() {
         setHasCompletionAuthSuccess(false);
     };
 
-    // Timer — starts when game begins, stops when solved
+    const isAnyModalOpen = isWelcomeOpen || isProfileOpen || isAuthOpen || isLeaderboardOpen || isSettingsOpen || isHowToPlayOpen || isConfirmResetOpen || isHintConfirmOpen || !!completionSummary;
+
+    // Timer — starts when game begins, auto-pauses when any modal is open
     useEffect(() => {
-        if (!isWelcomeOpen && !isSolved && gameStartTimeRef.current > 0) {
+        if (!isAnyModalOpen && !isSolved && currentDifficultyRef.current) {
             timerIntervalRef.current = setInterval(() => {
-                setGameTimer(Math.floor((Date.now() - gameStartTimeRef.current) / 1000));
+                setGameTimer(prev => prev + 1);
             }, 1000);
         }
         return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
-    }, [isWelcomeOpen, isSolved]);
+    }, [isAnyModalOpen, isSolved]);
 
     useEffect(() => {
         if (!completionSummary?.rank || !completionSummary?.startRank) return;
@@ -992,9 +994,8 @@ function CubeViewer() {
 
     // Called when IsSolved = true — posts result to backend
     const handleGameComplete = async () => {
-        const durationSeconds = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
         const summaryBase: CompletionSummary = {
-            durationSeconds,
+            durationSeconds: gameTimer,
             mistakes: mistakesRef.current,
             score: scoreRef.current,
             difficulty: currentDifficultyRef.current,

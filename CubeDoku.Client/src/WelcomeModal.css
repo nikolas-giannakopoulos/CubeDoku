@@ -34,6 +34,8 @@
     padding: 24px;
     max-width: 650px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.4s ease-out;
 }
@@ -179,8 +181,8 @@
 }
 
 .lb-tab.active {
-    background: rgba(59, 130, 246, 0.18);
-    color: #3B82F6;
+    background: var(--color-accent-muted);
+    color: var(--color-accent);
 }
 
 .lb-tab:not(.active):hover {
@@ -240,30 +242,30 @@
 }
 
 .leaderboard-table tbody tr:hover td {
-    background: rgba(59, 130, 246, 0.12);
+    background: var(--color-accent-muted);
 }
 
 .leaderboard-table tbody tr.player-row td {
     background: transparent;
-    border-top: 1.5px solid rgba(59, 130, 246, 0.7);
-    border-bottom: 1.5px solid rgba(59, 130, 246, 0.7);
+    border-top: 1.5px solid var(--color-accent);
+    border-bottom: 1.5px solid var(--color-accent);
 }
 
 .leaderboard-table tbody tr.player-row td:first-child {
-    border-left: 1.5px solid rgba(59, 130, 246, 0.7);
+    border-left: 1.5px solid var(--color-accent);
     border-top-left-radius: 10px;
     border-bottom-left-radius: 10px;
 }
 
 .leaderboard-table tbody tr.player-row td:last-child {
-    border-right: 1.5px solid rgba(59, 130, 246, 0.7);
+    border-right: 1.5px solid var(--color-accent);
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
 }
 
 .leaderboard-table tbody tr.player-row:hover td {
-    background: rgba(59, 130, 246, 0.12);
-    border-color: rgba(59, 130, 246, 0.9);
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent-hover);
 }
 
 .close-button {
@@ -286,11 +288,11 @@
 /* Header */
 .welcome-header {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .welcome-header h1 {
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 800;
     margin: 0;
     color: var(--color-text-primary);
@@ -308,16 +310,16 @@
 .welcome-rules {
     background: var(--color-surface-elevated);
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
     border: 1px solid var(--color-border);
 }
 
 .welcome-rules h2 {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--color-text-primary);
-    margin: 0 0 16px 0;
+    margin: 0 0 8px 0;
 }
 
 .welcome-rules ul {
@@ -328,9 +330,9 @@
 
 .welcome-rules li {
     color: var(--color-text-secondary);
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 8px;
     padding-left: 8px;
 }
 
@@ -345,14 +347,14 @@
 
 /* Difficulty Selection */
 .welcome-difficulty {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .welcome-difficulty h2 {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--color-text-primary);
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
     text-align: center;
 }
 
@@ -366,7 +368,7 @@
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: 8px;
-    padding: 24px;
+    padding: 16px;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
@@ -387,21 +389,21 @@
 }
 
 .difficulty-icon {
-    font-size: 40px;
-    margin-bottom: 12px;
+    font-size: 32px;
+    margin-bottom: 8px;
 }
 
 .difficulty-icon img {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     object-fit: contain;
 }
 
 .difficulty-name {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--color-text-primary);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .difficulty-desc {
@@ -417,8 +419,8 @@
     color: var(--color-bg);
     border: none;
     border-radius: 8px;
-    padding: 18px 32px;
-    font-size: 18px;
+    padding: 14px 24px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);

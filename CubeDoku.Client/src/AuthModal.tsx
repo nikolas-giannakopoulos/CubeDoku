@@ -4,6 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { LuX } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from './context/AuthContext';
+import './ProfileModal.css';
 
 export interface AuthModalProps {
     isOpen: boolean;
@@ -70,11 +71,11 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         <div className={`auth-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
             <div className={`auth-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 {/* Header */}
-                <div className="auth-header">
-                    <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>
-                    <button className="auth-close-btn" onClick={onClose} aria-label="Close">
-                        <LuX size={18} />
+                <div className="modal-header">
+                    <button className="modal-back-btn" onClick={onClose} aria-label="Close">
+                        <LuX size={20} />
                     </button>
+                    <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>
                 </div>
 
                 <p className="auth-subtitle">

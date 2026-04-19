@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { jwtDecode } from 'jwt-decode';
+import { LuX } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import './WelcomeModal.css';
+import './ProfileModal.css';
 
 interface LeaderboardEntry {
     username: string;
@@ -94,7 +96,12 @@ export const LeaderboardModal = ({
     return (
         <div className={`leaderboard-modal${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
             <div className={`leaderboard-content${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
-                <h2>Leaderboard</h2>
+                <div className="modal-header">
+                    <button className="modal-back-btn" onClick={onClose} aria-label="Close Leaderboard">
+                        <LuX size={20} />
+                    </button>
+                    <h2>Leaderboard</h2>
+                </div>
 
                 <div className="lb-tabs">
                     <button
@@ -147,7 +154,7 @@ export const LeaderboardModal = ({
                     </div>
                 )}
 
-                <button className="close-button" onClick={onClose}>Close</button>
+
             </div>
         </div>
     );

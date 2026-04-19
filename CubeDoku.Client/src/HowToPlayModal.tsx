@@ -1,6 +1,7 @@
 import { LuX } from 'react-icons/lu';
 import { useModalTransition } from './useModalTransition';
 import './HowToPlayModal.css';
+import './ProfileModal.css';
 
 interface HowToPlayModalProps {
     isOpen: boolean;
@@ -14,11 +15,12 @@ export const HowToPlayModal = ({ isOpen, onClose }: HowToPlayModalProps) => {
     return (
         <div className={`howto-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
             <div className={`howto-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="How to Play">
-                <button className="howto-close-btn" aria-label="Close How to Play" onClick={onClose}>
-                    <LuX size={20} />
-                </button>
-
-                <h2>How to Play CubeDoku</h2>
+                <div className="modal-header">
+                    <button className="modal-back-btn" aria-label="Close How to Play" onClick={onClose}>
+                        <LuX size={20} />
+                    </button>
+                    <h2>How to Play CubeDoku</h2>
+                </div>
                 <p className="howto-intro">
                     CubeDoku combines Sudoku rules with 3D cube math constraints. Your goal is to complete the cube correctly and as fast as possible.
                 </p>

@@ -5,7 +5,7 @@ import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
 import { FaUser } from 'react-icons/fa';
 import { MdLeaderboard } from 'react-icons/md';
-import { LuChevronLeft } from 'react-icons/lu';
+import { LuX } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
 import { SettingsModal } from './SettingsModal';
@@ -186,7 +186,7 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <button className="modal-back-btn" onClick={() => setIsStatsOpen(false)} aria-label="Close stats">
-                                <LuChevronLeft size={20} />
+                                <LuX size={20} />
                             </button>
                             <h3>My Stats</h3>
                         </div>

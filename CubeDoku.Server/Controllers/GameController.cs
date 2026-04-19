@@ -205,40 +205,114 @@ namespace CubeDoku.Server.Controllers
                 if (request.CurrentState == null || request.CurrentState.Length != 54)
                     return BadRequest("CurrentState must contain exactly 54 values.");
 
-                Cube cube = new Cube();
-                int counter = 0;
+                Cube baseCube = new Cube();
+                int idx = 0;
                 foreach (var face in Enum.GetValues<CubeFaces>())
                 {
                     for (int row = 0; row < 3; row++)
                     {
                         for (int column = 0; column < 3; column++)
                         {
-                            var cell = cube.getCell(new CellPosition(face, row, column));
-                            cell.setNumber(request.CurrentState[counter]);
-                            counter++;
+                            if (request.LockedState != null && request.LockedState[idx])
+                            {
+                                baseCube.getCell(new CellPosition(face, row, column)).setNumber(request.CurrentState[idx]);
+                            }
+                            idx++;
                         }
                     }
                 }
 
-                var solver = new LogicalSolver(cube);
+                // Solve the base board
+                var solutionSolver = new Solver(12345);
+                solutionSolver.run(baseCube);
+
+                // First, check if there's any wrong number placed by the user
+                idx = 0;
+                foreach (var face in Enum.GetValues<CubeFaces>())
+                {
+                    for (int row = 0; row < 3; row++)
+                    {
+                        for (int column = 0; column < 3; column++)
+                        {
+                            int currentVal = request.CurrentState[idx];
+                            if (currentVal != 0 && request.LockedState != null && !request.LockedState[idx])
+                            {
+                                int correctVal = baseCube.getCell(new CellPosition(face, row, column)).getNumber();
+                                if (currentVal != correctVal)
+                                {
+                                    return Ok(new HintResponse
+                                    {
+                                        Face = face.ToString(),
+                                        Row = row,
+                                        Column = column,
+                                        Value = correctVal,
+                                        Reason = "Corrected a wrongly placed number."
+                                    });
+                                }
+                            }
+                            idx++;
+                        }
+                    }
+                }
+
+                Cube currentCube = new Cube();
+                idx = 0;
+                foreach (var face in Enum.GetValues<CubeFaces>())
+                {
+                    for (int row = 0; row < 3; row++)
+                    {
+                        for (int column = 0; column < 3; column++)
+                        {
+                            currentCube.getCell(new CellPosition(face, row, column)).setNumber(request.CurrentState[idx]);      
+                            idx++;
+                        }
+                    }
+                }
+
+                var solver = new LogicalSolver(currentCube);
                 var result = solver.Solve();
 
                 // LogicalSolver mutates the working cube while solving, so cell emptiness
                 // must be checked against the original request state, not the solved cube.
                 var nextStep = result.Steps.FirstOrDefault(step =>
                 {
-                    int idx = GetCellIndex(step.Position.face, step.Position.row, step.Position.column);
-                    if (idx < 0 || idx >= request.CurrentState.Length) return false;
-                    return request.CurrentState[idx] == 0;
+                    int stepIdx = GetCellIndex(step.Position.face, step.Position.row, step.Position.column);
+                    if (stepIdx < 0 || stepIdx >= request.CurrentState.Length) return false;
+                    return request.CurrentState[stepIdx] == 0;
                 });
 
                 if (nextStep == null)
-                    return BadRequest("No logical hint is available for the current board state.");
+                {
+                    // Fallback to providing any empty cell from the solved baseCube if logic fails
+                    idx = 0;
+                    foreach (var face in Enum.GetValues<CubeFaces>())
+                    {
+                        for (int row = 0; row < 3; row++)
+                        {
+                            for (int column = 0; column < 3; column++)
+                            {
+                                if (request.CurrentState[idx] == 0)
+                                {
+                                    return Ok(new HintResponse
+                                    {
+                                        Face = face.ToString(),
+                                        Row = row,
+                                        Column = column,
+                                        Value = baseCube.getCell(new CellPosition(face, row, column)).getNumber(),
+                                        Reason = "Revealed an empty cell."
+                                    });
+                                }
+                                idx++;
+                            }
+                        }
+                    }
+                    return BadRequest("No hint is available for the current board state.");
+                }
 
                 if (request.LockedState != null && request.LockedState.Length == 54)
                 {
-                    int idx = GetCellIndex(nextStep.Position.face, nextStep.Position.row, nextStep.Position.column);
-                    if (request.LockedState[idx])
+                    int stepIdx = GetCellIndex(nextStep.Position.face, nextStep.Position.row, nextStep.Position.column);
+                    if (request.LockedState[stepIdx])
                         return BadRequest("Hint points to a locked clue. Please try again.");
                 }
 

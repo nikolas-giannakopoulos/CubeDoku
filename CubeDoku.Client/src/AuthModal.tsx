@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { useGoogleLogin } from '@react-oauth/google';
-import { LuX } from 'react-icons/lu';
+import { LuX, LuCircleCheck } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from './context/AuthContext';
 import './ProfileModal.css';
@@ -20,13 +20,26 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setSuccess(false);
+            setBusy(false);
+            setError('');
+            setPassword('');
+        }
+    }, [isOpen]);
 
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
                 await loginWithGoogle(tokenResponse.access_token);
-                onAuthSuccess?.();
-                onClose();
+                setSuccess(true);
+                setTimeout(() => {
+                    onAuthSuccess?.();
+                    onClose();
+                }, 1500);
             } catch {
                 setError('Google login failed.');
             }
@@ -43,6 +56,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         setUsername('');
         setEmail('');
         setPassword('');
+        setSuccess(false);
     };
 
     const submit = async () => {
@@ -54,11 +68,13 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             } else {
                 await register(username, email, password);
             }
-            onAuthSuccess?.();
-            onClose();
+            setSuccess(true);
+            setTimeout(() => {
+                onAuthSuccess?.();
+                onClose();
+            }, 1500);
         } catch (e: any) {
             setError(typeof e?.message === 'string' ? e.message : 'Authentication failed.');
-        } finally {
             setBusy(false);
         }
     };
@@ -78,73 +94,84 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                     <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>
                 </div>
 
-                <p className="auth-subtitle">
-                    {mode === 'login'
-                        ? 'Log in to save results and appear on leaderboards.'
-                        : 'Sign up to track your stats and rank.'}
-                </p>
+                {success ? (
+                    <div className="auth-success-container">
+                        <LuCircleCheck size={64} className="auth-success-icon" />
+                        <div className="auth-success-text">
+                            {mode === 'login' ? 'Successfully logged in!' : 'Account created successfully!'}
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <p className="auth-subtitle">
+                            {mode === 'login'
+                                ? 'Log in to save results and appear on leaderboards.'
+                                : 'Sign up to track your stats and rank.'}
+                        </p>
 
-                {/* Fields */}
-                {mode === 'signup' && (
-                    <input
-                        className="auth-input"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        placeholder="Username"
-                        autoComplete="username"
-                    />
+                        {/* Fields */}
+                        {mode === 'signup' && (
+                            <input
+                                className="auth-input"
+                                value={username}
+                                onChange={e => setUsername(e.target.value)}
+                                placeholder="Username"
+                                autoComplete="username"
+                            />
+                        )}
+                        <input
+                            className="auth-input"
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            placeholder="Email"
+                            autoComplete="email"
+                        />
+                        <input
+                            className="auth-input"
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder="Password"
+                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                        />
+
+                        {error && <p className="auth-error">{error}</p>}
+
+                        {/* Primary action */}
+                        <button className="auth-primary auth-submit" onClick={submit} disabled={busy}>
+                            {busy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
+                        </button>
+
+                        {/* Divider */}
+                        <div className="auth-divider">
+                            <span>or</span>
+                        </div>
+
+                        {/* Google */}
+                        <button className="auth-google-btn" onClick={() => googleLogin()} disabled={busy}>
+                            <FcGoogle size={20} />
+                            Continue with Google
+                        </button>
+
+                        {/* Switch mode */}
+                        <p className="auth-switch">
+                            {mode === 'login' ? (
+                                <>Don't have an account?{' '}
+                                    <button className="auth-switch-link" onClick={() => switchMode('signup')}>
+                                        Create one
+                                    </button>
+                                </>
+                            ) : (
+                                <>Already have an account?{' '}
+                                    <button className="auth-switch-link" onClick={() => switchMode('login')}>
+                                        Log in
+                                    </button>
+                                </>
+                            )}
+                        </p>
+                    </>
                 )}
-                <input
-                    className="auth-input"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Email"
-                    autoComplete="email"
-                />
-                <input
-                    className="auth-input"
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Password"
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                />
-
-                {error && <p className="auth-error">{error}</p>}
-
-                {/* Primary action */}
-                <button className="auth-primary auth-submit" onClick={submit} disabled={busy}>
-                    {busy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
-                </button>
-
-                {/* Divider */}
-                <div className="auth-divider">
-                    <span>or</span>
-                </div>
-
-                {/* Google */}
-                <button className="auth-google-btn" onClick={() => googleLogin()} disabled={busy}>
-                    <FcGoogle size={20} />
-                    Continue with Google
-                </button>
-
-                {/* Switch mode */}
-                <p className="auth-switch">
-                    {mode === 'login' ? (
-                        <>Don't have an account?{' '}
-                            <button className="auth-switch-link" onClick={() => switchMode('signup')}>
-                                Create one
-                            </button>
-                        </>
-                    ) : (
-                        <>Already have an account?{' '}
-                            <button className="auth-switch-link" onClick={() => switchMode('login')}>
-                                Log in
-                            </button>
-                        </>
-                    )}
-                </p>
             </div>
         </div>
     );

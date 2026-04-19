@@ -24,9 +24,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
     useEffect(() => {
         if (isOpen) {
+            setMode('login');
             setSuccess(false);
             setBusy(false);
             setError('');
+            setUsername('');
+            setEmail('');
             setPassword('');
         }
     }, [isOpen]);

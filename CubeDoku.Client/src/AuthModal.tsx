@@ -91,7 +91,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             <div className={`auth-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 {/* Header */}
                 <div className="modal-header">
-                    <button className="modal-back-btn" onClick={onClose} aria-label="Close">
+                    <button type="button" className="modal-back-btn" onClick={onClose} aria-label="Close">
                         <LuX size={20} />
                     </button>
                     <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>
@@ -142,7 +142,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         {error && <p className="auth-error">{error}</p>}
 
                         {/* Primary action */}
-                        <button className="auth-primary auth-submit" onClick={submit} disabled={busy}>
+                        <button type="button" className="auth-primary auth-submit" onClick={submit} disabled={busy}>
                             {busy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
                         </button>
 
@@ -152,7 +152,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         </div>
 
                         {/* Google */}
-                        <button className="auth-google-btn" onClick={() => googleLogin()} disabled={busy}>
+                        <button type="button" className="auth-google-btn" onClick={(e) => { e.preventDefault(); googleLogin(); }} disabled={busy}>
                             <FcGoogle size={20} />
                             Continue with Google
                         </button>
@@ -161,13 +161,13 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         <p className="auth-switch">
                             {mode === 'login' ? (
                                 <>Don't have an account?{' '}
-                                    <button className="auth-switch-link" onClick={() => switchMode('signup')}>
+                                    <button type="button" className="auth-switch-link" onClick={() => switchMode('signup')}>
                                         Create one
                                     </button>
                                 </>
                             ) : (
                                 <>Already have an account?{' '}
-                                    <button className="auth-switch-link" onClick={() => switchMode('login')}>
+                                    <button type="button" className="auth-switch-link" onClick={() => switchMode('login')}>
                                         Log in
                                     </button>
                                 </>

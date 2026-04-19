@@ -1365,6 +1365,25 @@ function CubeViewer() {
                     }
                 }
 
+                // Phase C: when erasing a cell that was in error, clear any sibling error
+                // cells that the server did NOT re-confirm in this response.
+                // Corner/edge conflicts affect multiple faces simultaneously; after an erase
+                // the server only mentions the erased cell itself — it silently omits now-clean
+                // siblings. Any serverErrorsRef entry not re-confirmed here can be safely purged.
+                if (newValue === 0 && serverErrorsRef.current.size > 0) {
+                    const mentionedIds = new Set<string>();
+                    if (data.updatedCells) {
+                        data.updatedCells.forEach((update: any) => {
+                            mentionedIds.add(`${update.face}_${update.row}_${update.column}`);
+                        });
+                    }
+                    for (const id of [...serverErrorsRef.current]) {
+                        if (!confirmedErrorsThisMove.has(id) && !mentionedIds.has(id)) {
+                            serverErrorsRef.current.delete(id);
+                        }
+                    }
+                }
+
                 // Step 4 — Commit to React state.
                 const currentErrors = serverErrorsRef.current;
                 const updatedData = tempData.map(cell => ({

@@ -3,7 +3,7 @@ import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } fr
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
-import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp } from 'react-icons/lu';
+import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp, LuPencil } from 'react-icons/lu';
 import { FaGithub } from 'react-icons/fa';
 import { handleGithub } from './extraHandlers';
 import { ProfileModal } from './ProfileModal';
@@ -126,7 +126,9 @@ function CubeModel({
     conflictedFaces,
     lockedCellIds,
     programmaticPressCellId,
-    cellNotes
+    cellNotes,
+    isPencilMode,
+    onNote
 }: {
     selectedNumber: number | 'eraser' | null;
     mockBoardData: BoardCell[];
@@ -135,6 +137,8 @@ function CubeModel({
     lockedCellIds: Set<string>;
     programmaticPressCellId?: string | null;
     cellNotes?: Record<string, number[]>;
+    isPencilMode?: boolean;
+    onNote?: (cellId: string, value: number) => void;
 }) {
     // timestamp to force reload, or just a version number
     const { theme } = useTheme() as { theme: 'light' | 'dark' };
@@ -345,23 +349,25 @@ function CubeModel({
                 0
             );
 
-            // Number group: identical animation added at timeline position 0 — locked in sync
+            // Number group + Notes group: identical animation at timeline position 0 — locked in sync
             if (groupRef.current) {
-                const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
-                if (numGroup) {
-                    if (!numGroup.userData._origPos) {
-                        numGroup.userData._origPos = {
-                            x: numGroup.position.x, y: numGroup.position.y, z: numGroup.position.z,
+                const groupNames = ['Number_' + cellId, 'Notes_' + cellId];
+                groupNames.forEach(gName => {
+                    const grp = groupRef.current.getObjectByName(gName) as any;
+                    if (!grp) return;
+                    if (!grp.userData._origPos) {
+                        grp.userData._origPos = {
+                            x: grp.position.x, y: grp.position.y, z: grp.position.z,
                         };
                     }
-                    const numOrig = numGroup.userData._origPos;
-                    gsap.killTweensOf(numGroup.position);
-                    tl.fromTo(numGroup.position,
-                        { [axis]: numOrig[axis] },
-                        { [axis]: numOrig[axis] - sign * NUDGE, duration: 0.14, ease: 'power2.out', repeat: 1, yoyo: true },
-                        0 // same start time = moves exactly with the cell
+                    const grpOrig = grp.userData._origPos;
+                    gsap.killTweensOf(grp.position);
+                    tl.fromTo(grp.position,
+                        { [axis]: grpOrig[axis] },
+                        { [axis]: grpOrig[axis] - sign * NUDGE, duration: 0.14, ease: 'power2.out', repeat: 1, yoyo: true },
+                        0
                     );
-                }
+                });
             }
         });
 
@@ -423,17 +429,18 @@ function CubeModel({
         gsap.to(cellMesh.position, { [axis]: orig[axis] + sign * PRESS_DEPTH, duration: 0.08, ease: 'power2.in' });
 
         if (groupRef.current) {
-            const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
-            if (numGroup) {
-                if (numGroup.userData._origPos === undefined) {
-                    numGroup.userData._origPos = {
-                        x: numGroup.position.x, y: numGroup.position.y, z: numGroup.position.z,
+            ['Number_' + cellId, 'Notes_' + cellId].forEach(gName => {
+                const grp = groupRef.current.getObjectByName(gName) as any;
+                if (!grp) return;
+                if (grp.userData._origPos === undefined) {
+                    grp.userData._origPos = {
+                        x: grp.position.x, y: grp.position.y, z: grp.position.z,
                     };
                 }
-                const numOrig = numGroup.userData._origPos;
-                gsap.killTweensOf(numGroup.position);
-                gsap.to(numGroup.position, { [axis]: numOrig[axis] + sign * PRESS_DEPTH, duration: 0.08, ease: 'power2.in' });
-            }
+                const grpOrig = grp.userData._origPos;
+                gsap.killTweensOf(grp.position);
+                gsap.to(grp.position, { [axis]: grpOrig[axis] + sign * PRESS_DEPTH, duration: 0.08, ease: 'power2.in' });
+            });
         }
     };
 
@@ -450,14 +457,15 @@ function CubeModel({
         gsap.to(cellMesh.position, { [axis]: orig[axis], duration: 0.35, ease: 'elastic.out(1.1, 0.4)' });
 
         if (groupRef.current) {
-            const numGroup = groupRef.current.getObjectByName('Number_' + cellId) as any;
-            if (numGroup) {
-                const numOrig = numGroup.userData._origPos;
-                if (numOrig) {
-                    gsap.killTweensOf(numGroup.position);
-                    gsap.to(numGroup.position, { [axis]: numOrig[axis], duration: 0.35, ease: 'elastic.out(1.1, 0.4)' });
+            ['Number_' + cellId, 'Notes_' + cellId].forEach(gName => {
+                const grp = groupRef.current.getObjectByName(gName) as any;
+                if (!grp) return;
+                const grpOrig = grp.userData._origPos;
+                if (grpOrig) {
+                    gsap.killTweensOf(grp.position);
+                    gsap.to(grp.position, { [axis]: grpOrig[axis], duration: 0.35, ease: 'elastic.out(1.1, 0.4)' });
                 }
-            }
+            });
         }
     };
 
@@ -622,8 +630,10 @@ function CubeModel({
                         pressAudio.currentTime = 0;
                         pressAudio.play().catch(e => console.warn('Audio play failed', e));
 
-                        // Game logic only — animation handled by onPointerDown/Up
-                        if (selectedNumber === 'eraser') {
+                        if (isPencilMode && typeof selectedNumber === 'number' && onNote) {
+                            // Pencil mode — toggle note on the cell, don't place a real number
+                            onNote(cellID, selectedNumber);
+                        } else if (selectedNumber === 'eraser') {
                             onMove(cellID, 0);
                         } else if (typeof selectedNumber === 'number') {
                             onMove(cellID, selectedNumber);
@@ -688,6 +698,7 @@ function CubeModel({
                 return (
                     <group
                         key={`notes-${cellId}`}
+                        name={'Notes_' + cellId}
                         position={[
                             cellNode.position.x + offset[0],
                             cellNode.position.y + offset[1],
@@ -699,14 +710,15 @@ function CubeModel({
                             const assetNode = nodes[`Asset_Num_${val}`];
                             if (!assetNode) return null;
                             const idx = val - 1;
-                            const noteRow = Math.floor(idx / 3) - 1;
-                            const noteCol = (idx % 3) - 1;
-                            const spacing = 0.26;
+                            // 3x3 grid: cols -1,0,+1 / rows +1,0,-1 (top-to-bottom)
+                            const noteCol = (idx % 3) - 1;   // -1, 0, 1
+                            const noteRow = Math.floor(idx / 3) - 1; // -1, 0, 1
+                            const spacing = 0.18;
                             return (
                                 <group
                                     key={`note-${cellId}-${val}`}
                                     position={[noteCol * spacing, -noteRow * spacing, 0]}
-                                    scale={[0.22, 0.22, 0.22]}
+                                    scale={[0.18, 0.18, 0.18]}
                                 >
                                     <Center>
                                         <Clone object={assetNode} visible={true} raycast={() => null} />
@@ -727,7 +739,8 @@ function CubeViewer() {
     const { theme } = useTheme() as { theme: 'light' | 'dark' };
 
     const [selectedNumber, setSelectedNumber] = useState<number | 'eraser' | null>(null);
-    const [cellNotes, _setCellNotes] = useState<Record<string, number[]>>({});
+    const [cellNotes, setCellNotes] = useState<Record<string, number[]>>({});
+    const [isPencilMode, setIsPencilMode] = useState(false);
     const [mockBoardData, setMockBoardData] = useState<BoardCell[]>([
         { id: 'Left_1_1', value: 5 },
         { id: 'Left_2_1', value: 8, state: 'Error' },
@@ -1268,14 +1281,24 @@ function CubeViewer() {
                 const data = await response.json();
                 console.log('Move Response:', data);
 
-                // Snapshot pre-move state for undo
-                lastMoveRef.current = {
-                    boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
-                    mistakes: mistakesRef.current,
-                    score: scoreRef.current,
-                    completedFaces: new Set(completedFacesRef.current),
-                };
-                setCanUndo(true);
+                // Snapshot pre-move state for undo — but only when the board is
+                // actually changing. If the cell already holds `newValue` (e.g. the
+                // user double/triple-clicked the same number), skip saving a new
+                // snapshot so the previous meaningful undo entry is preserved.
+                const existingCell = mockBoardData.find(c => c.id === cellId);
+                const isSameValue = existingCell
+                    ? existingCell.value === newValue
+                    : newValue === 0;
+
+                if (!isSameValue) {
+                    lastMoveRef.current = {
+                        boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
+                        mistakes: mistakesRef.current,
+                        score: scoreRef.current,
+                        completedFaces: new Set(completedFacesRef.current),
+                    };
+                    setCanUndo(true);
+                }
 
                 // Step 1 — Compute the new board state synchronously (values only).
                 // We need this to determine which faces are conflicted BEFORE deciding
@@ -1350,6 +1373,16 @@ function CubeViewer() {
                 }));
                 setMockBoardData(() => updatedData);
 
+                // Clear notes for the cell that just received a real number
+                if (newValue !== 0) {
+                    setCellNotes(prev => {
+                        if (!prev[cellId]) return prev;
+                        const next = { ...prev };
+                        delete next[cellId];
+                        return next;
+                    });
+                }
+
                 // Check for newly completed faces and award score (skip for hint-driven moves)
                 const allFaces = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'];
                 allFaces.forEach(f => {
@@ -1388,11 +1421,40 @@ function CubeViewer() {
     const handleEraserSelect = () => {
         if (selectedNumber != 'eraser') {
             setSelectedNumber('eraser');
+            setIsPencilMode(false);
         }
         else {
             setSelectedNumber(null);
         }
     }
+
+    const handlePencilToggle = () => {
+        setIsPencilMode(prev => !prev);
+        // Always clear the selected number (and eraser) when toggling pencil in either direction
+        setSelectedNumber(null);
+    };
+
+    const handleNote = (cellId: string, value: number) => {
+        // Don't allow notes on locked cells or cells with a placed number
+        if (lockedCellIds.has(cellId)) return;
+        const cell = mockBoardData.find(c => c.id === cellId);
+        if (cell && cell.value > 0) return;
+
+        setCellNotes(prev => {
+            const existing = prev[cellId] ?? [];
+            if (existing.includes(value)) {
+                // Toggle off
+                const next = existing.filter(n => n !== value);
+                if (next.length === 0) {
+                    const updated = { ...prev };
+                    delete updated[cellId];
+                    return updated;
+                }
+                return { ...prev, [cellId]: next };
+            }
+            return { ...prev, [cellId]: [...existing, value].sort((a, b) => a - b) };
+        });
+    };
 
     const handleUndo = async () => {
         if (!lastMoveRef.current || isWelcomeOpen || isSolved) return;
@@ -1467,6 +1529,7 @@ function CubeViewer() {
         else {
             setSelectedNumber(null);
         }
+        // Keep pencil mode when switching numbers — only tool buttons clear it
     }
 
     const handleDifficultySelect = (
@@ -1528,6 +1591,8 @@ function CubeViewer() {
         setIsSolved(false);
         setCompletionSummary(null);
         setSelectedNumber(null);
+        setIsPencilMode(false);
+        setCellNotes({});
         // Restore board to original locked cells only
         setMockBoardData([...lockedCellsRef.current]);
     };
@@ -1806,6 +1871,13 @@ function CubeViewer() {
                         <LuEraser size={20} />
                     </button>
                     <button
+                        className={`action-btn pencil-btn ${isPencilMode ? 'selected' : ''}`}
+                        title="Pencil / Notes"
+                        onClick={handlePencilToggle}
+                    >
+                        <LuPencil size={20} />
+                    </button>
+                    <button
                         className="action-btn hint-btn"
                         title="Hint"
                         onClick={() => {
@@ -1895,6 +1967,8 @@ function CubeViewer() {
                             lockedCellIds={lockedCellIds}
                             programmaticPressCellId={programmaticPressCellId}
                             cellNotes={cellNotes}
+                            isPencilMode={isPencilMode}
+                            onNote={handleNote}
                         />
                         <ContactShadows
                             position={[0, -1.65, 0]}

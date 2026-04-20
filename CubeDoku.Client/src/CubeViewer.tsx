@@ -29,7 +29,9 @@ const THEME_MATERIALS = {
         base: { color: 0x252527, roughness: 0.30, metalness: 0.40 },
         // Numbers: clean crisp white — IBL provides specularity, minimal emissive for shadow visibility only
         num_default: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x333333, emissiveIntensity: 0.10 },
-        num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 }
+        num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 },
+        // Hint outline ribbon — vivid amber glow that stands out against the dark background
+        hint_outline: { color: 0xF59E0B, roughness: 0.12, metalness: 0.70, emissive: 0xD97706, emissiveIntensity: 0.55 }
     },
     light: {
         // Low roughness + moderate metalness mirrors the dark-mode gloss formula
@@ -41,7 +43,9 @@ const THEME_MATERIALS = {
         // Buttery gold — slightly de-saturated, glow dialed down to a barely-there hint
         num_default: { color: 0xD0AD48, roughness: 0.30, metalness: 0.78, emissive: 0x8A6A10, emissiveIntensity: 0.12 },
         // White on error cells — pops against the coral background; glow kept very faint
-        num_error:   { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 }
+        num_error:   { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 },
+        // Hint outline ribbon — deep indigo that pops on the warm sandy background
+        hint_outline: { color: 0x4F46E5, roughness: 0.18, metalness: 0.60, emissive: 0x3730A3, emissiveIntensity: 0.40 }
     }
 };
 
@@ -118,6 +122,39 @@ type RevealRow = {
     hint?: string;
 };
 
+
+// Clones any asset node and applies a single uniform material to every mesh inside it.
+type MatCfg = { color: number; roughness: number; metalness: number; emissive?: number; emissiveIntensity?: number };
+function SimpleNumClone({
+    assetNode,
+    cfg,
+}: {
+    assetNode: any;
+    cfg: MatCfg;
+}) {
+    const cloned = useMemo(() => {
+        const clone = assetNode.clone(true);
+
+        const mat = new THREE.MeshStandardMaterial();
+        mat.color.set(cfg.color);
+        mat.roughness = cfg.roughness;
+        mat.metalness = cfg.metalness;
+        mat.emissive.set(cfg.emissive ?? cfg.color);
+        mat.emissiveIntensity = cfg.emissiveIntensity ?? 0.8;
+
+        clone.traverse((child: any) => {
+            child.visible = true;
+            if (!child.isMesh) return;
+            child.material = mat;
+            child.raycast = () => {};
+        });
+
+        return clone;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [assetNode, cfg.color, cfg.emissive, cfg.emissiveIntensity]);
+
+    return <primitive object={cloned} visible={true} raycast={() => null} />;
+}
 
 function CubeModel({
     selectedNumber,
@@ -236,6 +273,7 @@ function CubeModel({
     useEffect(() => {
         if (!nodes) return;
         Object.keys(nodes).forEach(nodeName => {
+            // Hide all number assets (including the new _Outline variants)
             if (nodeName.startsWith('Asset_Num_') && nodes[nodeName]) {
                 nodes[nodeName].visible = false;
             }
@@ -643,16 +681,30 @@ function CubeModel({
             />
             {mockBoardData.map((data) => {
                 const cellNode = nodes[data.id];
-                const assetNode = nodes[`Asset_Num_${data.value}`];
                 const isLocked = lockedCellIds.has(data.id) || !!data.isLocked;
 
-                if (!cellNode || !assetNode) return null;
+                const normalNodeName = `Asset_Num_${data.value}`;
+                const outlineNodeName = `Asset_Num_${data.value}_Outline`;
+                const normalNode = nodes[normalNodeName];
+                const outlineNode = nodes[outlineNodeName];
+
+                // Hint cells have both: the normal mesh on top + the outline mesh pushed inward.
+                // Non-hint cells (or hints whose outline isn't in the GLB) use only the normal mesh.
+                const hasOutlineVariant = isLocked && !!outlineNode;
+
+                if (!cellNode || !normalNode) return null;
                 const { offset, rotation } = getNumberTransform(cellNode.name);
                 const faceName = data.id.split('_')[0];
                 const isError = data.state === 'Error' || conflictedFaces.has(faceName);
                 const cfg = isError
                     ? THEME_MATERIALS[theme].num_error
                     : THEME_MATERIALS[theme].num_default;
+                const outlineCfg = THEME_MATERIALS[theme].hint_outline;
+
+                // Amount (in local units) the outline mesh is pushed deeper into the cube face
+                // so only the protruding rim of the larger mesh is visible around the normal number.
+                // Using a negative value for local Z to push it *inward* behind the normal mesh.
+                const INSET = -0.015;
 
                 return (
                     <group
@@ -667,9 +719,20 @@ function CubeModel({
                     >
                         <group scale={isLocked ? [1.12, 1.12, 1.12] : [1, 1, 1]}>
                             <Center>
+                                {/* Outline mesh rendered inward (behind the normal number) */}
+                                {hasOutlineVariant && (
+                                    <group position={[0, 0, INSET]}>
+                                        <SimpleNumClone
+                                            key={`outline-${data.id}-${data.value}-${theme}`}
+                                            assetNode={outlineNode!}
+                                            cfg={outlineCfg}
+                                        />
+                                    </group>
+                                )}
+                                {/* Normal number mesh rendered at face level (on top of outline) */}
                                 <Clone
                                     key={`clone-${data.id}-${data.value}-${isError ? 'e' : 'n'}`}
-                                    object={assetNode}
+                                    object={normalNode}
                                     visible={true}
                                     raycast={() => null}
                                     inject={

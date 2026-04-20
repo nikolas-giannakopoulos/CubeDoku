@@ -717,7 +717,7 @@ function CubeModel({
                         ]}
                         rotation={rotation}
                     >
-                        <group scale={isLocked ? [1.12, 1.12, 1.12] : [1, 1, 1]}>
+                        <group scale={[1, 1, 1]}>
                             <Center>
                                 {/* Outline mesh rendered inward (behind the normal number) */}
                                 {hasOutlineVariant && (

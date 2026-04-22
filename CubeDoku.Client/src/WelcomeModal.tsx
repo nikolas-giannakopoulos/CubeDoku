@@ -4,7 +4,7 @@ import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
 import { FaUser } from 'react-icons/fa';
-import { MdLeaderboard } from 'react-icons/md';
+
 import { LuX } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';

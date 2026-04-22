@@ -30,8 +30,8 @@ const THEME_MATERIALS = {
         // Numbers: clean crisp white — IBL provides specularity, minimal emissive for shadow visibility only
         num_default: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x333333, emissiveIntensity: 0.10 },
         num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 },
-        // Hint outline ribbon — vivid amber glow that stands out against the dark background
-        hint_outline: { color: 0xF59E0B, roughness: 0.12, metalness: 0.70, emissive: 0xD97706, emissiveIntensity: 0.55 }
+        // Hint outline ribbon — crisp mid-silver to match the white numbers and dark cells
+        hint_outline: { color: 0x77777D, roughness: 0.30, metalness: 0.50, emissive: 0x44444A, emissiveIntensity: 0.25 }
     },
     light: {
         // Low roughness + moderate metalness mirrors the dark-mode gloss formula
@@ -43,9 +43,9 @@ const THEME_MATERIALS = {
         // Buttery gold — slightly de-saturated, glow dialed down to a barely-there hint
         num_default: { color: 0xD0AD48, roughness: 0.30, metalness: 0.78, emissive: 0x8A6A10, emissiveIntensity: 0.12 },
         // White on error cells — pops against the coral background; glow kept very faint
-        num_error:   { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 },
-        // Hint outline ribbon — deep indigo that pops on the warm sandy background
-        hint_outline: { color: 0x4F46E5, roughness: 0.18, metalness: 0.60, emissive: 0x3730A3, emissiveIntensity: 0.40 }
+        num_error: { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 },
+        // Hint outline ribbon — deep charcoal/slate to provide strong contrast against gold while fitting the elegant theme
+        hint_outline: { color: 0x4A4A50, roughness: 0.40, metalness: 0.20, emissive: 0x222225, emissiveIntensity: 0.10 }
     }
 };
 
@@ -146,11 +146,11 @@ function SimpleNumClone({
             child.visible = true;
             if (!child.isMesh) return;
             child.material = mat;
-            child.raycast = () => {};
+            child.raycast = () => { };
         });
 
         return clone;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [assetNode, cfg.color, cfg.emissive, cfg.emissiveIntensity]);
 
     return <primitive object={cloned} visible={true} raycast={() => null} />;
@@ -348,7 +348,7 @@ function CubeModel({
             if (node && (node as any).material && data.state === 'Error') {
                 (node as any).material = materials.Cell_Fail;
                 currentErroredCells.add(data.id);
-                
+
                 // Also turn this specific cell's backplate darker red (handles individual corners/edges)
                 const backNode = nodes[`${data.id}_Back`] || nodes[`${data.id}_Backplate`];
                 if (backNode && (backNode as any).material) {
@@ -860,9 +860,9 @@ function CubeViewer() {
     const hintRotateRafRef = useRef<number | null>(null);
 
     // Modal transition hooks for inline modals
-    const confirmResetT  = useModalTransition(isConfirmResetOpen);
-    const hintConfirmT   = useModalTransition(isHintConfirmOpen);
-    const completionT    = useModalTransition(!!completionSummary);
+    const confirmResetT = useModalTransition(isConfirmResetOpen);
+    const hintConfirmT = useModalTransition(isHintConfirmOpen);
+    const completionT = useModalTransition(!!completionSummary);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -1295,7 +1295,7 @@ function CubeViewer() {
             const hintValue = Number(hintData.value);
 
             await rotateToFace(hintData.face);
-            const moveSuccess = await handleMove(hintCellId, hintValue, { suppressScore: true });
+            const moveSuccess = await handleMove(hintCellId, hintValue, { suppressScore: true, isHint: true });
             if (!moveSuccess) {
                 throw new Error('Could not apply hint move.');
             }
@@ -1316,7 +1316,7 @@ function CubeViewer() {
     const handleMove = async (
         cellId: string,
         newValue: number,
-        options?: { suppressScore?: boolean }
+        options?: { suppressScore?: boolean; isHint?: boolean }
     ) => {
         if (lockedCellIds.has(cellId) || isWelcomeOpen || isSolved) return false;
         const { currentState, lockedState } = getBoardPayload();
@@ -1354,13 +1354,26 @@ function CubeViewer() {
                     : newValue === 0;
 
                 if (!isSameValue) {
-                    lastMoveRef.current = {
-                        boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
-                        mistakes: mistakesRef.current,
-                        score: scoreRef.current,
-                        completedFaces: new Set(completedFacesRef.current),
-                    };
-                    setCanUndo(true);
+                    if (options?.isHint) {
+                        // If it's a hint, don't create a new undo snapshot.
+                        // Instead, if there's an existing snapshot, update it so the hint remains when undoing.
+                        if (lastMoveRef.current) {
+                            const existingIndex = lastMoveRef.current.boardData.findIndex(c => c.id === cellId);
+                            if (existingIndex >= 0) {
+                                lastMoveRef.current.boardData[existingIndex] = { id: cellId, value: newValue, isLocked: true };
+                            } else {
+                                lastMoveRef.current.boardData.push({ id: cellId, value: newValue, isLocked: true });
+                            }
+                        }
+                    } else {
+                        lastMoveRef.current = {
+                            boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
+                            mistakes: mistakesRef.current,
+                            score: scoreRef.current,
+                            completedFaces: new Set(completedFacesRef.current),
+                        };
+                        setCanUndo(true);
+                    }
                 }
 
                 // Step 1 — Compute the new board state synchronously (values only).
@@ -1553,7 +1566,7 @@ function CubeViewer() {
             for (let r = 0; r < 3; r++) {
                 for (let c = 0; c < 3; c++) {
                     previousState.push(valueMap.get(`${face}_${r}_${c}`) || 0);
-                }   
+                }
             }
         });
 
@@ -1801,7 +1814,7 @@ function CubeViewer() {
                 </div>
             )}
 
-            {completionT.shouldRender && (
+            {completionT.shouldRender && completionSummary && (
                 <div className={`complete-overlay${completionT.isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={() => setCompletionSummary(null)}>
                     <div className={`complete-modal${completionT.isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()}>
                         <h2>Puzzle Complete</h2>
@@ -1856,25 +1869,33 @@ function CubeViewer() {
                         )}
 
                         <div className="complete-actions">
-                            {!completionSummary.saved && !isCompletionAuthenticated && (
+                            {!completionSummary?.saved && !isCompletionAuthenticated && (
                                 <button className="complete-primary" onClick={() => setIsAuthOpen(true)}>
                                     Log In / Sign Up
                                 </button>
                             )}
-                            {!completionSummary.saved && isCompletionAuthenticated && !!completionSummary.saveError && (
+                            {!completionSummary?.saved && isCompletionAuthenticated && !!completionSummary?.saveError && (
                                 <button
                                     className="complete-primary"
-                                    onClick={() => saveCompletionSummary({
-                                        ...completionSummary,
-                                        playerName: user?.username ?? completionSummary.playerName
-                                    }).catch((e) => console.error('Retry save failed', e))}
+                                    onClick={() => {
+                                        if (completionSummary) {
+                                            saveCompletionSummary({
+                                                ...completionSummary,
+                                                playerName: user?.username ?? completionSummary.playerName
+                                            }).catch((e) => console.error('Retry save failed', e));
+                                        }
+                                    }}
                                 >
                                     Retry Save
                                 </button>
                             )}
                             <button
                                 className="complete-primary"
-                                onClick={() => startGameFromServer(completionSummary.difficulty)}
+                                onClick={() => {
+                                    if (completionSummary) {
+                                        startGameFromServer(completionSummary.difficulty);
+                                    }
+                                }}
                             >
                                 Play Again
                             </button>

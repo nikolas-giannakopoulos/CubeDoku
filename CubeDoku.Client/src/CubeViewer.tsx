@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
-import { useState, Suspense, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { saveProgress, loadProgress, clearProgress, type PersistedGameState } from './useGamePersistence';
 import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
@@ -907,42 +907,47 @@ function CubeViewer() {
         setSavedProgress(next);
     }, []);
 
-    // --- Build the current persistence snapshot ---
-    const buildSnapshot = useCallback((): PersistedGameState => ({
-        difficulty: currentDifficultyRef.current,
-        puzzleDate: puzzleDateRef.current,
-        boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
-        lockedCells: lockedCellsRef.current,
-        cellNotes,
-        gameTimer,
-        mistakes: mistakesRef.current,
-        score: scoreRef.current,
-        completedFaces: [...completedFacesRef.current],
-        savedAt: Date.now(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [mockBoardData, cellNotes, gameTimer]);
+    // --- Always-current snapshot ref (avoids stale closures in beforeunload) ---
+    const latestSnapshotRef = useRef<PersistedGameState | null>(null);
 
-    // --- Autosave whenever the board, notes, or timer changes (but only while a game is active) ---
+    // --- Autosave: runs whenever board / notes / timer change ---
+    // Builds the snapshot inline so every value is taken from the current render.
+    // Also keeps latestSnapshotRef up-to-date for the beforeunload handler.
     useEffect(() => {
         if (!gameActiveRef.current) return;
-        if (isSolved) return; // don't overwrite after completion
-        const snapshot = buildSnapshot();
-        if (!snapshot.difficulty || !snapshot.puzzleDate) return;
+        if (isSolved) return;
+        const difficulty = currentDifficultyRef.current;
+        const puzzleDate = puzzleDateRef.current;
+        if (!difficulty || !puzzleDate || lockedCellsRef.current.length === 0) return;
+
+        const snapshot: PersistedGameState = {
+            difficulty,
+            puzzleDate,
+            boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
+            lockedCells: lockedCellsRef.current,
+            cellNotes,
+            gameTimer,
+            mistakes: mistakesRef.current,
+            score: scoreRef.current,
+            completedFaces: [...completedFacesRef.current],
+            savedAt: Date.now(),
+        };
+        latestSnapshotRef.current = snapshot;
         saveProgress(snapshot);
-    }, [mockBoardData, cellNotes, gameTimer, isSolved, buildSnapshot]);
+    }, [mockBoardData, cellNotes, gameTimer, isSolved]);
 
     // --- Flush save on tab-close / page-unload ---
+    // Reads from latestSnapshotRef — never stale, no closure issue.
     useEffect(() => {
         const handleBeforeUnload = () => {
-            if (!gameActiveRef.current || isSolved) return;
-            const snapshot = buildSnapshot();
-            if (!snapshot.difficulty || !snapshot.puzzleDate) return;
+            if (!gameActiveRef.current) return;
+            const snapshot = latestSnapshotRef.current;
+            if (!snapshot || snapshot.lockedCells.length === 0) return;
             saveProgress(snapshot);
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isSolved]);
+    }, []);
 
     const formatDuration = (durationSeconds: number): string => {
         return `${Math.floor(durationSeconds / 60).toString().padStart(2, '0')}:${(durationSeconds % 60).toString().padStart(2, '0')}`;

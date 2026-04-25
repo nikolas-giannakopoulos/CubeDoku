@@ -3,9 +3,9 @@ import { useModalTransition } from './useModalTransition';
 import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
-import { FaExclamationTriangle } from 'react-icons/fa';
+import { FaExclamationTriangle, FaPlay } from 'react-icons/fa';
 import { MdLeaderboard } from 'react-icons/md';
-import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut, LuPlay } from 'react-icons/lu';
+import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
 import { HowToPlayModal } from './HowToPlayModal';
@@ -29,8 +29,8 @@ export interface WelcomeModalProps {
     onContinue?: (state: PersistedGameState) => void;
 }
 
-const formatTime = (seconds: number): string => {
-    if (!seconds) return '—';
+const formatTime = (seconds: number | undefined | null): string => {
+    if (seconds == null || isNaN(seconds)) return '—';
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
@@ -136,9 +136,12 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                     <div className="welcome-difficulty">
                         <h2>Select Difficulty</h2>
                         <div className="difficulty-buttons">
-                            <button
+                            <div
                                 className={`difficulty-btn ${selectedDifficulty === 'Classic' ? 'selected' : ''}`}
                                 onClick={() => setSelectedDifficulty('Classic')}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('Classic')}
                             >
                                 <div className="difficulty-icon">
                                     <img src={classicIcon} alt="Classic" />
@@ -151,14 +154,17 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                         className="continue-attempt-btn"
                                         onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['Classic']!); }}
                                     >
-                                        <LuPlay size={12} />
+                                        <FaPlay size={10} />
                                         Continue — {formatTime(savedProgress['Classic']!.gameTimer)}
                                     </button>
                                 )}
-                            </button>
-                            <button
+                            </div>
+                            <div
                                 className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
                                 onClick={() => setSelectedDifficulty('BrainTerror')}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('BrainTerror')}
                             >
                                 <div className="difficulty-icon">
                                     <img src={brainterrorIcon} alt="Brain Terror" />
@@ -171,11 +177,11 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                         className="continue-attempt-btn"
                                         onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['BrainTerror']!); }}
                                     >
-                                        <LuPlay size={12} />
+                                        <FaPlay size={10} />
                                         Continue — {formatTime(savedProgress['BrainTerror']!.gameTimer)}
                                     </button>
                                 )}
-                            </button>
+                            </div>
                         </div>
                     </div>
 

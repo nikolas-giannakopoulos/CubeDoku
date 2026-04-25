@@ -36,6 +36,11 @@ export function loadProgress(difficulty: 'Classic' | 'BrainTerror'): PersistedGa
         const parsed: PersistedGameState = JSON.parse(raw);
         // Basic sanity check
         if (!parsed.boardData || !parsed.lockedCells) return null;
+        // Discard stale saves that contain no real locked cells (e.g. placeholder board data)
+        if (parsed.lockedCells.length === 0) {
+            localStorage.removeItem(key(difficulty));
+            return null;
+        }
         return parsed;
     } catch {
         return null;

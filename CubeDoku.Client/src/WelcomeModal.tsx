@@ -7,6 +7,7 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import { LuX } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
+import { HowToPlayModal } from './HowToPlayModal';
 import { SettingsModal } from './SettingsModal';
 import './ProfileModal.css';
 
@@ -39,6 +40,7 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
     const [stats, setStats] = useState<any | null>(null);
     const [statsLoading, setStatsLoading] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+    const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const handleStart = () => handleDifficultySelect(selectedDifficulty);
@@ -87,6 +89,16 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
     return (
         <div className={`welcome-modal-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`}>
             <div className={`welcome-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`}>
+                {/* Top Left Buttons */}
+                <div className="welcome-top-left-buttons">
+                    <button className="welcome-text-btn" onClick={() => setIsLeaderboardOpen(true)}>
+                        Leaderboard
+                    </button>
+                    <button className="welcome-text-btn" onClick={() => setIsHowToPlayOpen(true)}>
+                        How to Play
+                    </button>
+                </div>
+
                 {/* Top Right Buttons */}
                 <div className="welcome-top-buttons">
                     {!isLoggedIn ? (
@@ -112,19 +124,6 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
                 </div>
 
                 <div className="welcome-content">
-                    <div className="welcome-rules">
-                        <h2>How to Play</h2>
-                        <ul>
-                            <li><strong>The Board:</strong> A 3D cube with 6 faces (3x3 each).</li>
-                            <li><strong>The Rules:</strong>
-                                <ul>
-                                    <li>Every face must contain numbers 1-9.</li>
-                                    <li>Every continuous band around the cube must not contain duplicate numbers.</li>
-                                </ul>
-                            </li>
-                            <li><strong>Controls:</strong> Left-click and drag to rotate. Scroll to zoom. Click a number (right), then a cell to place it.</li>
-                        </ul>
-                    </div>
 
                     <div className="welcome-difficulty">
                         <h2>Select Difficulty</h2>
@@ -162,6 +161,12 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
                 isOpen={isLeaderboardOpen}
                 onClose={() => setIsLeaderboardOpen(false)}
                 defaultTab={selectedDifficulty}
+            />
+
+            {/* How to Play Modal */}
+            <HowToPlayModal
+                isOpen={isHowToPlayOpen}
+                onClose={() => setIsHowToPlayOpen(false)}
             />
 
             {isStatsOpen && (

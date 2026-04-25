@@ -52,6 +52,16 @@
     }
 }
 
+/* Top Left Buttons */
+.welcome-top-left-buttons {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
 /* Top Right Buttons */
 .welcome-top-buttons {
     position: absolute;
@@ -288,6 +298,7 @@
 /* Header */
 .welcome-header {
     text-align: center;
+    margin-top: 36px;
     margin-bottom: 12px;
 }
 

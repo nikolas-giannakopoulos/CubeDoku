@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { saveProgress, loadProgress, clearProgress, type PersistedGameState } from './useGamePersistence';
-import { useTabSync, type TabSyncMessage } from './useTabSync';
+import { useTabSync } from './useTabSync';
 import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp, LuPencil, LuPause } from 'react-icons/lu';
@@ -663,7 +663,7 @@ function CubeModel({
 
                     const cellID = getClickedCellId(e);
 
-                    if (cellID) {
+                    if (cellID && isCellTileNode(cellID)) {
                         if (lockedCellIds.has(cellID)) return;
 
                         // Always play press sound on any valid cell click

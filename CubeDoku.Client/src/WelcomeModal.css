@@ -36,7 +36,7 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.08) inset, 0 -1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.4s ease-out;
 }
 
@@ -112,7 +112,7 @@
     border-radius: 8px;
     min-width: 140px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.06) inset, 0 4px 12px rgba(0, 0, 0, 0.5);
     z-index: 20;
 }
 
@@ -158,7 +158,7 @@
     padding: 32px;
     max-width: 500px;
     width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.08) inset, 0 -1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .leaderboard-content h2 {
@@ -683,7 +683,7 @@
     border-radius: 12px;
     padding: 24px;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.08) inset, 0 -1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 60px rgba(0, 0, 0, 0.7);
     max-width: 400px;
 }
 

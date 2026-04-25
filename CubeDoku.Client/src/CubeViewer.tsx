@@ -2,9 +2,10 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
 import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
 import { saveProgress, loadProgress, clearProgress, type PersistedGameState } from './useGamePersistence';
+import { useTabSync, type TabSyncMessage } from './useTabSync';
 import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
-import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp, LuPencil } from 'react-icons/lu';
+import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp, LuPencil, LuPause } from 'react-icons/lu';
 import { FaGithub } from 'react-icons/fa';
 import { handleGithub } from './extraHandlers';
 import { ProfileModal } from './ProfileModal';
@@ -835,6 +836,8 @@ function CubeViewer() {
     const [savedProgress, setSavedProgress] = useState<Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>>>({});
     // Track whether a game is actively in progress (needed to gate autosave)
     const gameActiveRef = useRef(false);
+    // Set when another tab takes over the same difficulty session
+    const [isPausedByOtherTab, setIsPausedByOtherTab] = useState(false);
 
     // Stores the original locked cells so we can reset to them on Start Over
     const lockedCellsRef = useRef<{ id: string; value: number; isLocked: true }[]>([]);
@@ -905,6 +908,24 @@ function CubeViewer() {
         if (classic) next['Classic'] = classic;
         if (brainTerror) next['BrainTerror'] = brainTerror;
         setSavedProgress(next);
+    }, []);
+
+    // --- Keep savedProgress in sync when another tab writes to localStorage ---
+    // The 'storage' event fires in ALL OTHER tabs whenever localStorage changes.
+    // This ensures the welcome-modal continue buttons always show the canonical
+    // (latest winning-tab) timer, even across multiple open tabs.
+    useEffect(() => {
+        const handleStorage = (e: StorageEvent) => {
+            if (!e.key?.startsWith('cubedoku_progress_')) return;
+            const classic = loadProgress('Classic');
+            const brainTerror = loadProgress('BrainTerror');
+            const next: Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>> = {};
+            if (classic) next['Classic'] = classic;
+            if (brainTerror) next['BrainTerror'] = brainTerror;
+            setSavedProgress(next);
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
     }, []);
 
     // --- Always-current snapshot ref (avoids stale closures in beforeunload) ---
@@ -1069,9 +1090,9 @@ function CubeViewer() {
         setHasCompletionAuthSuccess(false);
     };
 
-    const isAnyModalOpen = isWelcomeOpen || isProfileOpen || isAuthOpen || isLeaderboardOpen || isSettingsOpen || isHowToPlayOpen || isConfirmResetOpen || isHintConfirmOpen || !!completionSummary;
+    const isAnyModalOpen = isWelcomeOpen || isProfileOpen || isAuthOpen || isLeaderboardOpen || isSettingsOpen || isHowToPlayOpen || isConfirmResetOpen || isHintConfirmOpen || !!completionSummary || isPausedByOtherTab;
 
-    // Timer — starts when game begins, auto-pauses when any modal is open
+    // Timer — starts when game begins, auto-pauses when any modal is open or another tab took over
     useEffect(() => {
         if (!isAnyModalOpen && !isSolved && currentDifficultyRef.current) {
             timerIntervalRef.current = setInterval(() => {
@@ -1725,7 +1746,10 @@ function CubeViewer() {
 
         setSelectedDifficulty(difficulty);
         setIsWelcomeOpen(false);
+        setIsPausedByOtherTab(false);
         gameActiveRef.current = true;
+        // Notify other tabs that this tab is now owning this difficulty's session
+        broadcast({ type: 'GAME_STARTED', difficulty });
 
         const cells = lockedCells ?? [];
         const boardData = cells.map(cell => ({
@@ -1806,7 +1830,10 @@ function CubeViewer() {
         setCellNotes(state.cellNotes ?? {});
 
         gameActiveRef.current = true;
+        setIsPausedByOtherTab(false);
         setIsWelcomeOpen(false);
+        // Notify other tabs that this tab is now owning this difficulty's session
+        broadcast({ type: 'GAME_STARTED', difficulty: state.difficulty });
     };
 
     // DEV ONLY — auto-fills the solution, scores all faces, and triggers game completion.
@@ -1842,6 +1869,47 @@ function CubeViewer() {
         } catch (err) {
             console.error('[DEV] Auto-solve failed:', err);
         }
+    };
+
+    // --- Tab sync: handle another tab taking over or reclaiming our session ---
+    const { broadcast } = useTabSync({
+        onTakeover: (difficulty) => {
+            // Only pause if we're actively playing the same difficulty
+            if (!gameActiveRef.current) return;
+            if (currentDifficultyRef.current !== difficulty) return;
+            setIsPausedByOtherTab(true);
+        },
+        onReclaimed: (difficulty) => {
+            // The reclaiming tab has taken back the session — this tab must give it up
+            if (!gameActiveRef.current) return;
+            if (currentDifficultyRef.current !== difficulty) return;
+            // Stop autosave immediately so we don't overwrite the winner's save
+            gameActiveRef.current = false;
+            latestSnapshotRef.current = null;
+            // Reset to welcome modal so the user can start fresh or continue
+            setIsPausedByOtherTab(false);
+            setIsWelcomeOpen(true);
+        },
+    });
+
+    // Called when the PAUSED tab clicks "Play Here Instead".
+    // Re-saves this tab's own snapshot (overwriting the other tab's save)
+    // then broadcasts so the other tab gives up the session.
+    const handleResumeHere = () => {
+        if (latestSnapshotRef.current && latestSnapshotRef.current.lockedCells.length > 0) {
+            saveProgress(latestSnapshotRef.current);
+        }
+        setIsPausedByOtherTab(false);
+        broadcast({ type: 'GAME_RECLAIMED', difficulty: currentDifficultyRef.current });
+    };
+
+    // Called when the PAUSED tab clicks "Keep Playing There".
+    // This tab concedes — it should return to the welcome modal.
+    const handleGiveUpSession = () => {
+        gameActiveRef.current = false;
+        latestSnapshotRef.current = null;
+        setIsPausedByOtherTab(false);
+        setIsWelcomeOpen(true);
     };
 
     const isCompletionAuthenticated = isLoggedIn || hasCompletionAuthSuccess;
@@ -1884,6 +1952,27 @@ function CubeViewer() {
                     )}
                 </div>
             </div>
+            {/* ── Tab-takeover pause overlay ─────────────────────────────── */}
+            {isPausedByOtherTab && (
+                <div className="tab-paused-overlay">
+                    <div className="tab-paused-modal">
+                        <div className="tab-paused-icon">
+                            <LuPause size={40} strokeWidth={1.5} />
+                        </div>
+                        <h2>Game Paused</h2>
+                        <p>You opened this puzzle in another tab.</p>
+                        <div className="tab-paused-actions">
+                            <button className="tab-paused-resume" onClick={handleResumeHere}>
+                                Play Here Instead
+                            </button>
+                            <button className="tab-paused-dismiss" onClick={handleGiveUpSession}>
+                                Keep Playing There
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <WelcomeModal
                 isOpen={isWelcomeOpen}
                 onDifficultySelect={handleDifficultySelect}

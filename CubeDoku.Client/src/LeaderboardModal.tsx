@@ -9,7 +9,6 @@ import './ProfileModal.css';
 interface LeaderboardEntry {
     username: string;
     difficulty: string;
-    puzzleDate: string;
     score: number;
     durationSeconds: number;
     mistakes: number;
@@ -71,7 +70,8 @@ export const LeaderboardModal = ({
     useEffect(() => {
         if (!isOpen) return;
         setLoading(true);
-        fetch('/api/user/leaderboard', { cache: 'no-store' })
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+        fetch(`/api/user/leaderboard?date=${today}`, { cache: 'no-store' })
             .then(r => r.ok ? r.json() : [])
             .then(data => setAllData(data))
             .catch(() => setAllData([]))
@@ -86,7 +86,6 @@ export const LeaderboardModal = ({
     const hasPinned = shouldPin && rows.some(e =>
         e.username === pinnedEntry.username &&
         e.difficulty === pinnedEntry.difficulty &&
-        e.puzzleDate === pinnedEntry.puzzleDate &&
         e.score === pinnedEntry.score &&
         e.durationSeconds === pinnedEntry.durationSeconds &&
         e.mistakes === pinnedEntry.mistakes
@@ -129,7 +128,6 @@ export const LeaderboardModal = ({
                                 <tr>
                                     <th>#</th>
                                     <th>Player</th>
-                                    <th>Date</th>
                                     <th>Score</th>
                                     <th>Time</th>
                                     <th>Mistakes</th>
@@ -142,7 +140,6 @@ export const LeaderboardModal = ({
                                         <tr key={i} className={isPlayerRow ? 'player-row' : ''}>
                                             <td>{i + 1}</td>
                                             <td>{entry.username}</td>
-                                            <td>{entry.puzzleDate}</td>
                                             <td>{entry.score}</td>
                                             <td>{formatTime(entry.durationSeconds)}</td>
                                             <td>{entry.mistakes}</td>

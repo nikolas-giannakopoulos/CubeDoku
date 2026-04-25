@@ -2150,7 +2150,6 @@ function CubeViewer() {
                         ? {
                             username: completionSummary.playerName,
                             difficulty: completionSummary.difficulty,
-                            puzzleDate: completionSummary.puzzleDate,
                             score: completionSummary.score,
                             durationSeconds: completionSummary.durationSeconds,
                             mistakes: completionSummary.mistakes

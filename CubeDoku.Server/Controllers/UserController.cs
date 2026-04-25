@@ -258,18 +258,23 @@ public class UserController(ApplicationDbContext db) : ControllerBase
         });
     }
 
-    // GET /api/user/leaderboard
+    // GET /api/user/leaderboard?date=YYYY-MM-DD  (defaults to today UTC)
     [HttpGet("leaderboard")]
-    public async Task<IActionResult> GetLeaderboard()
+    public async Task<IActionResult> GetLeaderboard([FromQuery] string? date = null)
     {
+        var puzzleDate = DateOnly.TryParse(date, out var parsed)
+            ? parsed
+            : DateOnly.FromDateTime(DateTime.UtcNow);
+
         var entries = await db.GameResults
+            .Where(r => r.PuzzleDate == puzzleDate)
             .Include(r => r.User)
             .OrderByDescending(r => r.Score)
             .ThenBy(r => r.DurationSeconds)
+            .ThenBy(r => r.CompletedAt)
             .Select(r => new {
                 r.User.Username,
                 r.Difficulty,
-                r.PuzzleDate,
                 r.Score,
                 r.DurationSeconds,
                 r.Mistakes

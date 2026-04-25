@@ -825,6 +825,7 @@ function CubeViewer() {
     const [hintError, setHintError] = useState('');
     const [programmaticPressCellId, setProgrammaticPressCellId] = useState<string | null>(null);
     const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
+    const [authOpenedFrom, setAuthOpenedFrom] = useState<'welcome' | 'top' | 'settings' | 'complete' | null>(null);
     const [_selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
     const [isConfirmResetOpen, setIsConfirmResetOpen] = useState(false);
 
@@ -1076,7 +1077,7 @@ function CubeViewer() {
         };
 
         if (!isLoggedIn || !token) {
-            console.log(`Solved! Score: ${scoreRef.current} | Time: ${durationSeconds}s | Mistakes: ${mistakesRef.current}`);
+            console.log(`Solved! Score: ${scoreRef.current} | Time: ${summaryBase.durationSeconds}s | Mistakes: ${mistakesRef.current}`);
             try {
                 const response = await fetch('/api/user/preview-rank', {
                     method: 'POST',
@@ -1760,7 +1761,7 @@ function CubeViewer() {
                             <span>My Stats</span>
                         </button>
                     ) : (
-                        <button className="icon-button login-btn" onClick={() => setIsAuthOpen(true)}>
+                        <button className="icon-button login-btn" onClick={() => { setAuthOpenedFrom('top'); setIsAuthOpen(true); }}>
                             <MdPerson size={20} />
                             <span>Log In</span>
                         </button>
@@ -1770,7 +1771,11 @@ function CubeViewer() {
             <WelcomeModal
                 isOpen={isWelcomeOpen}
                 onDifficultySelect={handleDifficultySelect}
-                onAuthClick={() => setIsAuthOpen(true)}
+                onAuthClick={() => {
+                    setAuthOpenedFrom('welcome');
+                    setIsWelcomeOpen(false);
+                    setIsAuthOpen(true);
+                }}
             />
 
             {/* Start Over Confirmation Dialog */}
@@ -1870,7 +1875,7 @@ function CubeViewer() {
 
                         <div className="complete-actions">
                             {!completionSummary?.saved && !isCompletionAuthenticated && (
-                                <button className="complete-primary" onClick={() => setIsAuthOpen(true)}>
+                                <button className="complete-primary" onClick={() => { setAuthOpenedFrom('complete'); setIsAuthOpen(true); }}>
                                     Log In / Sign Up
                                 </button>
                             )}
@@ -1907,18 +1912,22 @@ function CubeViewer() {
                 </div>
             )}
             <ProfileModal
-                className="profile-modal"
                 isOpen={isProfileOpen}
                 onClose={() => setIsProfileOpen(false)}
             />
             <SettingsModal
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                onOpenAuth={() => setIsAuthOpen(true)}
+                onOpenAuth={() => { setAuthOpenedFrom('settings'); setIsAuthOpen(true); }}
             />
             <AuthModal
                 isOpen={isAuthOpen}
-                onClose={() => setIsAuthOpen(false)}
+                onClose={() => {
+                    setIsAuthOpen(false);
+                    if (authOpenedFrom === 'welcome') {
+                        setIsWelcomeOpen(true);
+                    }
+                }}
                 onAuthSuccess={() => setHasCompletionAuthSuccess(true)}
             />
             <LeaderboardModal

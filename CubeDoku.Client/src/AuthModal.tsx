@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { useGoogleLogin } from '@react-oauth/google';
-import { LuX, LuCircleCheck } from 'react-icons/lu';
+import { LuArrowLeft, LuCircleCheck } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from './context/AuthContext';
 import './ProfileModal.css';
@@ -91,8 +91,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             <div className={`auth-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 {/* Header */}
                 <div className="modal-header">
-                    <button type="button" className="modal-back-btn" onClick={onClose} aria-label="Close">
-                        <LuX size={20} />
+                    <button type="button" className="modal-back-btn" onClick={onClose} aria-label="Back">
+                        <LuArrowLeft size={20} />
                     </button>
                     <h3>{mode === 'login' ? 'Log In' : 'Create Account'}</h3>
                 </div>

@@ -20,9 +20,6 @@ interface StatsData {
 export interface ProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
-    className?: string;
-    onLogout?: () => void;
-    onSettings?: () => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -31,7 +28,7 @@ const formatTime = (seconds: number) => {
     return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export const ProfileModal = ({ isOpen, onClose, className, onLogout, onSettings }: ProfileModalProps) => {
+export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     const { user, token } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(false);

@@ -3,8 +3,7 @@ import { useModalTransition } from './useModalTransition';
 import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
-import { FaUser } from 'react-icons/fa';
-
+import { FaExclamationTriangle } from 'react-icons/fa';
 import { LuX } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
@@ -35,8 +34,8 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
     const { isLoggedIn, logout, token, user } = useAuth();
 
     const [selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
-    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
+    const [isLogoutWarningOpen, setIsLogoutWarningOpen] = useState(false);
     const [stats, setStats] = useState<any | null>(null);
     const [statsLoading, setStatsLoading] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
@@ -44,10 +43,7 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
 
     const handleStart = () => handleDifficultySelect(selectedDifficulty);
 
-    const handleUserClick = () => setIsUserMenuOpen(!isUserMenuOpen);
-
     const handleOpenStats = async () => {
-        setIsUserMenuOpen(false);
         setIsStatsOpen(true);
         setStatsLoading(true);
         try {
@@ -93,32 +89,19 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
             <div className={`welcome-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`}>
                 {/* Top Right Buttons */}
                 <div className="welcome-top-buttons">
-                    <button className="welcome-icon-btn" title={isLoggedIn ? "User Menu" : "Sign Up"} onClick={handleUserClick}>
-                        <FaUser size={18} />
-                    </button>
-
-                    {/* User Dropdown Menu */}
-                    {isUserMenuOpen && (
-                        <div className="user-dropdown">
-                            {!isLoggedIn ? (
-                                <div className="user-dropdown-item" onClick={() => {
-                                    setIsUserMenuOpen(false);
-                                    if (onAuthClick) onAuthClick();
-                                }}>
-                                    Sign Up / Login
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="user-dropdown-item" onClick={handleOpenStats}>
-                                        My Stats
-                                    </div>
-                                    <div className="user-dropdown-divider"></div>
-                                    <div className="user-dropdown-item user-dropdown-logout" onClick={() => { logout(); setIsUserMenuOpen(false); }}>
-                                        Logout
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                    {!isLoggedIn ? (
+                        <button className="welcome-text-btn" onClick={() => { if (onAuthClick) onAuthClick(); }}>
+                            Log in
+                        </button>
+                    ) : (
+                        <>
+                            <button className="welcome-text-btn" onClick={handleOpenStats}>
+                                My Stats
+                            </button>
+                            <button className="welcome-text-btn logout-btn" onClick={() => setIsLogoutWarningOpen(true)}>
+                                Log out
+                            </button>
+                        </>
                     )}
                 </div>
 
@@ -223,6 +206,28 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
             )}
 
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+            {/* Logout Warning Modal */}
+            {isLogoutWarningOpen && (
+                <div className="logout-warning-overlay">
+                    <div className="logout-warning-modal">
+                        <FaExclamationTriangle size={48} color="#ff4d4d" style={{ marginBottom: '16px' }} />
+                        <h3>Log out</h3>
+                        <p>Are you sure you want to log out?</p>
+                        <div className="logout-warning-buttons">
+                            <button className="logout-cancel-btn" onClick={() => setIsLogoutWarningOpen(false)}>
+                                Cancel
+                            </button>
+                            <button className="logout-confirm-btn" onClick={() => {
+                                logout();
+                                setIsLogoutWarningOpen(false);
+                            }}>
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

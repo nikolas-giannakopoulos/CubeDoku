@@ -427,6 +427,44 @@
     font-weight: 500;
 }
 
+/* ── Continue last attempt button inside each difficulty card ─────────────── */
+.continue-attempt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(72, 207, 174, 0.55);
+    background: rgba(72, 207, 174, 0.10);
+    color: #48cfad;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+    /* Make sure clicks on this button don't bubble up to the difficulty-btn */
+    position: relative;
+    z-index: 2;
+    white-space: nowrap;
+}
+
+.continue-attempt-btn:hover {
+    background: rgba(72, 207, 174, 0.22);
+    border-color: #48cfad;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(72, 207, 174, 0.25);
+}
+
+.continue-attempt-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
 /* Start Button */
 .start-button {
     width: 100%;

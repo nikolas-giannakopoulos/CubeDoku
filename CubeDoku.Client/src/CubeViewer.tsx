@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Clone, Center, ContactShadows, Environment } from '@react-three/drei';
-import { useState, Suspense, useEffect, useRef, useMemo } from 'react';
+import { useState, Suspense, useEffect, useRef, useMemo, useCallback } from 'react';
+import { saveProgress, loadProgress, clearProgress, type PersistedGameState } from './useGamePersistence';
 import { useModalTransition } from './useModalTransition';
 import { MdLeaderboard, MdPerson } from 'react-icons/md';
 import { LuRefreshCw, LuUndo2, LuEraser, LuLightbulb, LuSettings, LuCircleHelp, LuPencil } from 'react-icons/lu';
@@ -830,6 +831,11 @@ function CubeViewer() {
     const [_selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
     const [isConfirmResetOpen, setIsConfirmResetOpen] = useState(false);
 
+    // --- Saved progress (for welcome-modal continue buttons) ---
+    const [savedProgress, setSavedProgress] = useState<Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>>>({});
+    // Track whether a game is actively in progress (needed to gate autosave)
+    const gameActiveRef = useRef(false);
+
     // Stores the original locked cells so we can reset to them on Start Over
     const lockedCellsRef = useRef<{ id: string; value: number; isLocked: true }[]>([]);
 
@@ -890,6 +896,53 @@ function CubeViewer() {
             }
         };
     }, []);
+
+    // --- Load saved progress on mount so the welcome modal can show continue buttons ---
+    useEffect(() => {
+        const classic = loadProgress('Classic');
+        const brainTerror = loadProgress('BrainTerror');
+        const next: Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>> = {};
+        if (classic) next['Classic'] = classic;
+        if (brainTerror) next['BrainTerror'] = brainTerror;
+        setSavedProgress(next);
+    }, []);
+
+    // --- Build the current persistence snapshot ---
+    const buildSnapshot = useCallback((): PersistedGameState => ({
+        difficulty: currentDifficultyRef.current,
+        puzzleDate: puzzleDateRef.current,
+        boardData: mockBoardData.map(c => ({ id: c.id, value: c.value, isLocked: c.isLocked })),
+        lockedCells: lockedCellsRef.current,
+        cellNotes,
+        gameTimer,
+        mistakes: mistakesRef.current,
+        score: scoreRef.current,
+        completedFaces: [...completedFacesRef.current],
+        savedAt: Date.now(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [mockBoardData, cellNotes, gameTimer]);
+
+    // --- Autosave whenever the board, notes, or timer changes (but only while a game is active) ---
+    useEffect(() => {
+        if (!gameActiveRef.current) return;
+        if (isSolved) return; // don't overwrite after completion
+        const snapshot = buildSnapshot();
+        if (!snapshot.difficulty || !snapshot.puzzleDate) return;
+        saveProgress(snapshot);
+    }, [mockBoardData, cellNotes, gameTimer, isSolved, buildSnapshot]);
+
+    // --- Flush save on tab-close / page-unload ---
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (!gameActiveRef.current || isSolved) return;
+            const snapshot = buildSnapshot();
+            if (!snapshot.difficulty || !snapshot.puzzleDate) return;
+            saveProgress(snapshot);
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSolved]);
 
     const formatDuration = (durationSeconds: number): string => {
         return `${Math.floor(durationSeconds / 60).toString().padStart(2, '0')}:${(durationSeconds % 60).toString().padStart(2, '0')}`;
@@ -1499,6 +1552,14 @@ function CubeViewer() {
                 // Handle game solved
                 if (data.isSolved) {
                     setIsSolved(true);
+                    gameActiveRef.current = false;
+                    // Clear the saved slot — the game is finished
+                    clearProgress(currentDifficultyRef.current);
+                    setSavedProgress(prev => {
+                        const next = { ...prev };
+                        delete next[currentDifficultyRef.current];
+                        return next;
+                    });
                     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
                     await handleGameComplete();
                 }
@@ -1633,6 +1694,14 @@ function CubeViewer() {
         difficulty: 'Classic' | 'BrainTerror',
         lockedCells: { face: string; row: number; column: number; value: number }[]
     ) => {
+        // Clear any existing save for this difficulty — fresh start
+        clearProgress(difficulty);
+        setSavedProgress(prev => {
+            const next = { ...prev };
+            delete next[difficulty];
+            return next;
+        });
+
         // Reset game tracking
         const now = Date.now();
         gameStartTimeRef.current = now;
@@ -1651,6 +1720,7 @@ function CubeViewer() {
 
         setSelectedDifficulty(difficulty);
         setIsWelcomeOpen(false);
+        gameActiveRef.current = true;
 
         const cells = lockedCells ?? [];
         const boardData = cells.map(cell => ({
@@ -1671,6 +1741,13 @@ function CubeViewer() {
 
     const handleConfirmReset = () => {
         setIsConfirmResetOpen(false);
+        // Clear the save for the current difficulty — the player is starting over
+        clearProgress(currentDifficultyRef.current);
+        setSavedProgress(prev => {
+            const next = { ...prev };
+            delete next[currentDifficultyRef.current];
+            return next;
+        });
         // Stop any running timer
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         // Reset all game tracking
@@ -1690,8 +1767,41 @@ function CubeViewer() {
         setSelectedNumber(null);
         setIsPencilMode(false);
         setCellNotes({});
+        puzzleDateRef.current = new Date().toISOString().split('T')[0];
+        gameActiveRef.current = true;
         // Restore board to original locked cells only
         setMockBoardData([...lockedCellsRef.current]);
+    };
+
+    // --- Restore a saved game from the welcome modal ---
+    const handleContinueSaved = (state: PersistedGameState) => {
+        // Restore all tracking refs
+        const now = Date.now();
+        gameStartTimeRef.current = now;
+        lastActionTimeRef.current = now;
+        mistakesRef.current = state.mistakes;
+        scoreRef.current = state.score;
+        completedFacesRef.current = new Set(state.completedFaces);
+        currentDifficultyRef.current = state.difficulty;
+        puzzleDateRef.current = state.puzzleDate;
+        lastMoveRef.current = null;
+        serverErrorsRef.current = new Set();
+
+        setCanUndo(false);
+        setGameTimer(state.gameTimer);
+        setCurrentScore(state.score);
+        setIsSolved(false);
+        setCompletionSummary(null);
+        setSelectedDifficulty(state.difficulty);
+        setSelectedNumber(null);
+        setIsPencilMode(false);
+
+        lockedCellsRef.current = state.lockedCells;
+        setMockBoardData(state.boardData.map(c => ({ ...c })));
+        setCellNotes(state.cellNotes ?? {});
+
+        gameActiveRef.current = true;
+        setIsWelcomeOpen(false);
     };
 
     // DEV ONLY — auto-fills the solution, scores all faces, and triggers game completion.
@@ -1773,6 +1883,8 @@ function CubeViewer() {
                 isOpen={isWelcomeOpen}
                 onDifficultySelect={handleDifficultySelect}
                 exitToAuth={exitWelcomeToAuth}
+                savedProgress={savedProgress}
+                onContinue={handleContinueSaved}
                 onAuthClick={() => {
                     setExitWelcomeToAuth(true);
                     setAuthOpenedFrom('welcome');

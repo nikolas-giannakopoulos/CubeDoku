@@ -5,11 +5,12 @@ import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { MdLeaderboard } from 'react-icons/md';
-import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut } from 'react-icons/lu';
+import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut, LuPlay } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
 import { HowToPlayModal } from './HowToPlayModal';
 import { SettingsModal } from './SettingsModal';
+import { type PersistedGameState } from './useGamePersistence';
 import './ProfileModal.css';
 
 interface CellDTO {
@@ -24,6 +25,8 @@ export interface WelcomeModalProps {
     onDifficultySelect: (difficulty: 'Classic' | 'BrainTerror', lockedCells: CellDTO[]) => void;
     onAuthClick?: () => void;
     exitToAuth?: boolean;
+    savedProgress?: Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>>;
+    onContinue?: (state: PersistedGameState) => void;
 }
 
 const formatTime = (seconds: number): string => {
@@ -33,7 +36,7 @@ const formatTime = (seconds: number): string => {
     return `${m}:${s}`;
 };
 
-export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAuth }: WelcomeModalProps) => {
+export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAuth, savedProgress, onContinue }: WelcomeModalProps) => {
     const { isLoggedIn, logout, token, user } = useAuth();
 
     const [selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
@@ -142,6 +145,16 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                 </div>
                                 <div className="difficulty-name">Classic</div>
                                 <div className="difficulty-desc">Standard rules. Good for beginners.</div>
+                                {savedProgress?.['Classic'] && onContinue && (
+                                    <button
+                                        id="continue-classic-btn"
+                                        className="continue-attempt-btn"
+                                        onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['Classic']!); }}
+                                    >
+                                        <LuPlay size={12} />
+                                        Continue — {formatTime(savedProgress['Classic']!.gameTimer)}
+                                    </button>
+                                )}
                             </button>
                             <button
                                 className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
@@ -152,6 +165,16 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                 </div>
                                 <div className="difficulty-name">Brain Terror</div>
                                 <div className="difficulty-desc">Fewer clues. For truly deranged minds.</div>
+                                {savedProgress?.['BrainTerror'] && onContinue && (
+                                    <button
+                                        id="continue-brainTerror-btn"
+                                        className="continue-attempt-btn"
+                                        onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['BrainTerror']!); }}
+                                    >
+                                        <LuPlay size={12} />
+                                        Continue — {formatTime(savedProgress['BrainTerror']!.gameTimer)}
+                                    </button>
+                                )}
                             </button>
                         </div>
                     </div>

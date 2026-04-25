@@ -10,9 +10,10 @@ export interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAuthSuccess?: () => void;
+    openedFromWelcome?: boolean;
 }
 
-export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }: AuthModalProps) {
     const { login, register, loginWithGoogle } = useAuth();
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [username, setUsername] = useState('');
@@ -88,7 +89,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
     return (
         <div className={`auth-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
-            <div className={`auth-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
+            <div className={`auth-modal${isClosing ? ' modal-panel-exit' : (openedFromWelcome ? ' modal-panel-enter-right' : ' modal-panel-enter')}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 {/* Header */}
                 <div className="modal-header">
                     <button type="button" className="modal-back-btn" onClick={onClose} aria-label="Back">

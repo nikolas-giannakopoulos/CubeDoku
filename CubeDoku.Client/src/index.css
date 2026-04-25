@@ -155,12 +155,12 @@ button:focus-visible {
 
 /* ── Global Modal Transition Animations ─────────────────────────── */
 @keyframes _modal-panel-in {
-  from { opacity: 0; transform: translateY(52px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)     scale(1);    }
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 @keyframes _modal-panel-out {
-  from { opacity: 1; transform: translateY(0)      scale(1);    }
-  to   { opacity: 0; transform: translateY(-36px)  scale(0.97); }
+  from { opacity: 1; transform: translateY(0)     scale(1);    }
+  to   { opacity: 0; transform: translateY(-28px) scale(0.97); }
 }
 @keyframes _modal-overlay-in {
   from { opacity: 0; }
@@ -171,15 +171,35 @@ button:focus-visible {
   to   { opacity: 0; }
 }
 
+/* Directional: welcome slides left toward auth */
+@keyframes _modal-panel-out-left {
+  from { opacity: 1; transform: translateX(0)     scale(1);    }
+  to   { opacity: 0; transform: translateX(-60px) scale(0.94); }
+}
+/* Directional: auth slides in from the right */
+@keyframes _modal-panel-in-right {
+  from { opacity: 0; transform: translateX(60px) scale(0.94); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+
 .modal-panel-enter {
-  animation: _modal-panel-in 0.38s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+  animation: _modal-panel-in 0.36s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 .modal-panel-exit {
-  animation: _modal-panel-out 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+  animation: _modal-panel-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
 }
 .modal-overlay-enter {
   animation: _modal-overlay-in 0.22s ease both;
 }
 .modal-overlay-exit {
-  animation: _modal-overlay-out 0.26s ease both;
+  animation: _modal-overlay-out 0.24s ease both;
+}
+
+/* Used when welcome modal exits toward auth */
+.modal-panel-exit-left {
+  animation: _modal-panel-out-left 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+}
+/* Used when auth modal enters from welcome */
+.modal-panel-enter-right {
+  animation: _modal-panel-in-right 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }

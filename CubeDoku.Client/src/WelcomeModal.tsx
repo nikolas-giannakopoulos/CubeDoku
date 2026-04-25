@@ -4,7 +4,8 @@ import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
 import brainterrorIcon from './assets/brainterror.png';
 import { FaExclamationTriangle } from 'react-icons/fa';
-import { LuX } from 'react-icons/lu';
+import { MdLeaderboard } from 'react-icons/md';
+import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut } from 'react-icons/lu';
 import { useAuth } from './context/AuthContext';
 import { LeaderboardModal } from './LeaderboardModal';
 import { HowToPlayModal } from './HowToPlayModal';
@@ -22,6 +23,7 @@ export interface WelcomeModalProps {
     isOpen: boolean;
     onDifficultySelect: (difficulty: 'Classic' | 'BrainTerror', lockedCells: CellDTO[]) => void;
     onAuthClick?: () => void;
+    exitToAuth?: boolean;
 }
 
 const formatTime = (seconds: number): string => {
@@ -31,7 +33,7 @@ const formatTime = (seconds: number): string => {
     return `${m}:${s}`;
 };
 
-export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: WelcomeModalProps) => {
+export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAuth }: WelcomeModalProps) => {
     const { isLoggedIn, logout, token, user } = useAuth();
 
     const [selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
@@ -88,13 +90,20 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
 
     return (
         <div className={`welcome-modal-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`}>
-            <div className={`welcome-modal${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`}>
+            <div className={`welcome-modal${isClosing ? (exitToAuth ? ' modal-panel-exit-left' : ' modal-panel-exit') : ' modal-panel-enter'}`}>
+                {/* Title */}
+                <div className="welcome-header">
+                    <h1>CubeDoku</h1>
+                </div>
+
                 {/* Top Left Buttons */}
                 <div className="welcome-top-left-buttons">
                     <button className="welcome-text-btn" onClick={() => setIsLeaderboardOpen(true)}>
+                        <MdLeaderboard size={16} />
                         Leaderboard
                     </button>
                     <button className="welcome-text-btn" onClick={() => setIsHowToPlayOpen(true)}>
+                        <LuCircleHelp size={16} />
                         How to Play
                     </button>
                 </div>
@@ -103,27 +112,23 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick }: Welcom
                 <div className="welcome-top-buttons">
                     {!isLoggedIn ? (
                         <button className="welcome-text-btn" onClick={() => { if (onAuthClick) onAuthClick(); }}>
+                            <LuLogIn size={16} />
                             Log in
                         </button>
                     ) : (
                         <>
                             <button className="welcome-text-btn" onClick={handleOpenStats}>
+                                <LuUser size={16} />
                                 My Stats
                             </button>
                             <button className="welcome-text-btn logout-btn" onClick={() => setIsLogoutWarningOpen(true)}>
+                                <LuLogOut size={16} />
                                 Log out
                             </button>
                         </>
                     )}
                 </div>
-
-                {/* Header */}
-                <div className="welcome-header">
-                    <h1>CubeDoku</h1>
-                    <p className="subtitle">3D Sudoku on a Rubik's Cube</p>
-                </div>
-
-                <div className="welcome-content">
+                <div className="welcome-content" style={{ marginTop: '48px' }}>
 
                     <div className="welcome-difficulty">
                         <h2>Select Difficulty</h2>

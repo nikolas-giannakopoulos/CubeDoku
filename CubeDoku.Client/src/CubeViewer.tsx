@@ -817,6 +817,7 @@ function CubeViewer() {
     ]);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [exitWelcomeToAuth, setExitWelcomeToAuth] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
@@ -1771,7 +1772,9 @@ function CubeViewer() {
             <WelcomeModal
                 isOpen={isWelcomeOpen}
                 onDifficultySelect={handleDifficultySelect}
+                exitToAuth={exitWelcomeToAuth}
                 onAuthClick={() => {
+                    setExitWelcomeToAuth(true);
                     setAuthOpenedFrom('welcome');
                     setIsWelcomeOpen(false);
                     setIsAuthOpen(true);
@@ -1922,8 +1925,10 @@ function CubeViewer() {
             />
             <AuthModal
                 isOpen={isAuthOpen}
+                openedFromWelcome={authOpenedFrom === 'welcome'}
                 onClose={() => {
                     setIsAuthOpen(false);
+                    setExitWelcomeToAuth(false);
                     if (authOpenedFrom === 'welcome') {
                         setIsWelcomeOpen(true);
                     }

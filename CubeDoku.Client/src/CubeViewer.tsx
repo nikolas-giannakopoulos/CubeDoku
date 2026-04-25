@@ -992,33 +992,38 @@ function CubeViewer() {
         const isFirst = player.rank === 1;
         const isLast = player.rank >= totalPlayers;
 
+        let result: RevealRow[] = [];
+
         if (isFirst) {
-            const row2 = below[0] ?? player;
-            const row3 = below[1] ?? below[0] ?? player;
-            return [
-                { ...player, isPlayer: true, slot: 1, startSlot: 2 },
-                { ...row2, isPlayer: false, slot: 2 },
-                { ...row3, isPlayer: false, slot: 3 },
-            ];
+            result.push({ ...player, isPlayer: true, slot: 1, startSlot: 2 });
+            if (below[0]) result.push({ ...below[0], isPlayer: false, slot: 2 });
+            if (below[1]) result.push({ ...below[1], isPlayer: false, slot: 3 });
+        } else if (isLast) {
+            if (above[1]) result.push({ ...above[1], isPlayer: false, slot: 1 });
+            if (above[0]) result.push({ ...above[0], isPlayer: false, slot: 2 });
+            
+            const newSlot = (result.length + 1) as 1 | 2 | 3;
+            result.push({ ...player, isPlayer: true, slot: newSlot, startSlot: newSlot });
+        } else {
+            if (above[0]) result.push({ ...above[0], isPlayer: false, slot: 1 });
+            
+            const newSlot = (result.length + 1) as 1 | 2 | 3;
+            result.push({ ...player, isPlayer: true, slot: newSlot, startSlot: (newSlot + 1) as 1 | 2 | 3 });
+            
+            if (below[0]) result.push({ ...below[0], isPlayer: false, slot: (newSlot + 1) as 1 | 2 | 3 });
         }
 
-        if (isLast) {
-            const row1 = above[1] ?? above[0] ?? player;
-            const row2 = above[0] ?? player;
-            return [
-                { ...row1, isPlayer: false, slot: 1 },
-                { ...row2, isPlayer: false, slot: 2 },
-                { ...player, isPlayer: true, slot: 3, startSlot: 3 },
-            ];
-        }
+        result = result.map((r, i) => {
+            const finalSlot = (i + 1) as 1 | 2 | 3;
+            let startSlot = r.startSlot;
+            if (r.isPlayer && r.startSlot) {
+                const shift = Math.max(0, r.startSlot - r.slot);
+                startSlot = (finalSlot + shift) as 1 | 2 | 3;
+            }
+            return { ...r, slot: finalSlot, startSlot };
+        });
 
-        const row1 = above[0] ?? player;
-        const row3 = below[0] ?? player;
-        return [
-            { ...row1, isPlayer: false, slot: 1 },
-            { ...player, isPlayer: true, slot: 2, startSlot: 3 },
-            { ...row3, isPlayer: false, slot: 3 },
-        ];
+        return result;
     };
 
     const startGameFromServer = async (difficulty: 'Classic' | 'BrainTerror') => {

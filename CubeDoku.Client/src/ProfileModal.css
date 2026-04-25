@@ -292,7 +292,7 @@
 
 .verify-error {
     margin-top: 8px;
-    color: #fca5a5 !important;
+    color: var(--color-error) !important;
 }
 
 /* Auth Success Animation */

@@ -39,27 +39,29 @@
 }
 
 :root[data-theme='light'] {
-  --color-bg: #DFC4A8;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #f5f8fe;
-  --color-border: rgba(30, 41, 59, 0.14);
-  --color-border-hover: rgba(30, 41, 59, 0.28);
-  --color-text-primary: #0b1220;
-  --color-text-secondary: #2f425c;
-  --color-text-tertiary: #5f7492;
-  --color-accent: #7E22CE;
+  /* ── Refined Warm Stone Palette — modern, eye-friendly ── */
+  --color-bg: #D6B896;               /* warm sandy canvas */
+  --color-surface: #E5DDD1;          /* warm mid-tone — panels, cards */
+  --color-surface-elevated: #F0E9E1; /* warm cream — inputs, elevated rows */
+  --color-border: rgba(108, 74, 44, 0.14);
+  --color-border-hover: rgba(108, 74, 44, 0.28);
+  --color-text-primary: #1A0F07;    /* deep warm near-black */
+  --color-text-secondary: #4E3C2C;  /* medium warm brown */
+  --color-text-tertiary: #7A6050;   /* muted warm brown */
+  --color-accent: #7C3AED;          /* rich purple accent */
   --color-accent-hover: #9333EA;
-  --color-accent-muted: rgba(126, 34, 206, 0.14);
-  --color-error: #dc2626;
-  --color-success: #15803d;
-  --color-warning: #b45309;
-  --color-warning-strong: #d97706;
-  --color-warning-muted: rgba(217, 119, 6, 0.12);
-  --color-danger: #dc2626;
-  --color-danger-muted: rgba(220, 38, 38, 0.12);
-  --color-surface-overlay: rgba(255, 255, 255, 0.92);
-  --color-panel-bg: rgba(255, 255, 255, 0.72);
-  --color-overlay-backdrop: rgba(222, 231, 243, 0.72);
+  --color-accent-muted: rgba(124, 58, 237, 0.10);
+  --color-error: #BE1F1F;
+  --color-success: #1A6C38;
+  --color-warning: #92400E;
+  --color-warning-strong: #B45309;
+  --color-warning-muted: rgba(146, 64, 14, 0.10);
+  --color-danger: #B91C1C;
+  --color-danger-muted: rgba(185, 28, 28, 0.08);
+  /* Modal / overlay surfaces — warm cream glass, never pure white */
+  --color-surface-overlay: rgba(240, 233, 225, 0.98);
+  --color-panel-bg: rgba(229, 221, 209, 0.84);
+  --color-overlay-backdrop: rgba(120, 86, 52, 0.36);
 
   color-scheme: light;
 }
@@ -202,4 +204,252 @@ button:focus-visible {
 /* Used when auth modal enters from welcome */
 .modal-panel-enter-right {
   animation: _modal-panel-in-right 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Light Mode Enhancements — warm stone design system
+   All components harmonized with the sandy/cream/purple palette
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─ Overlay backdrops: warm amber tint instead of dark smoke ─ */
+:root[data-theme='light'] .auth-overlay {
+  background: rgba(120, 86, 52, 0.44);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+:root[data-theme='light'] .welcome-modal-overlay,
+:root[data-theme='light'] .logout-warning-overlay,
+:root[data-theme='light'] .howto-overlay,
+:root[data-theme='light'] .leaderboard-modal,
+:root[data-theme='light'] .profile-stats-overlay,
+:root[data-theme='light'] .verify-popup-overlay,
+:root[data-theme='light'] .complete-overlay,
+:root[data-theme='light'] .confirm-reset-overlay,
+:root[data-theme='light'] .tab-paused-overlay {
+  background: rgba(120, 86, 52, 0.36);
+}
+
+/* ─ Modal cards — warm cream glass with amber-tinted depth shadows ─ */
+:root[data-theme='light'] .welcome-modal,
+:root[data-theme='light'] .leaderboard-content,
+:root[data-theme='light'] .modal-content,
+:root[data-theme='light'] .howto-modal,
+:root[data-theme='light'] .auth-modal,
+:root[data-theme='light'] .confirm-reset-modal,
+:root[data-theme='light'] .complete-modal,
+:root[data-theme='light'] .tab-paused-modal,
+:root[data-theme='light'] .logout-warning-modal,
+:root[data-theme='light'] .verify-popup {
+  background: var(--color-surface-overlay);
+  box-shadow:
+    0 2px 0 rgba(255, 248, 240, 0.85) inset,
+    0 -1px 0 rgba(108, 74, 44, 0.06) inset,
+    0 22px 64px rgba(80, 52, 24, 0.20),
+    0 6px 18px rgba(80, 52, 24, 0.10);
+  border-color: rgba(108, 74, 44, 0.17);
+}
+
+/* ─ Floating panels — warm glassmorphism ─ */
+:root[data-theme='light'] .right-panel,
+:root[data-theme='light'] .right-panel-2,
+:root[data-theme='light'] .bottom-left-panel,
+:root[data-theme='light'] .profile-modal {
+  background: var(--color-panel-bg);
+  box-shadow:
+    0 2px 0 rgba(255, 248, 240, 0.65) inset,
+    0 4px 20px rgba(80, 52, 24, 0.13),
+    0 1px 4px rgba(80, 52, 24, 0.07);
+  border-color: rgba(108, 74, 44, 0.15);
+}
+
+/* ─ Top bar — warm frosted glass ─ */
+:root[data-theme='light'] .top-bar {
+  background: rgba(229, 221, 209, 0.92);
+  border-bottom-color: rgba(108, 74, 44, 0.16);
+  box-shadow: 0 1px 8px rgba(80, 52, 24, 0.10);
+}
+
+/* ─ Icon buttons on top-bar ─ */
+:root[data-theme='light'] .top-bar .icon-button {
+  background: rgba(240, 233, 225, 0.55);
+  border-color: rgba(108, 74, 44, 0.14);
+}
+
+:root[data-theme='light'] .top-bar .icon-button:hover {
+  background: rgba(229, 221, 209, 0.95);
+  border-color: rgba(108, 74, 44, 0.26);
+}
+
+/* ─ Input fields — warm cream, never pure white ─ */
+:root[data-theme='light'] .auth-input,
+:root[data-theme='light'] .settings-input {
+  background: rgba(240, 233, 225, 0.88);
+  border-color: rgba(108, 74, 44, 0.20);
+  color: var(--color-text-primary);
+}
+
+:root[data-theme='light'] .auth-input::placeholder,
+:root[data-theme='light'] .settings-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+:root[data-theme='light'] .auth-input:focus,
+:root[data-theme='light'] .settings-input:focus {
+  background: rgba(252, 247, 242, 0.99); /* warm near-white — never pure #fff */
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+/* ─ Number / action / extra buttons ─ */
+:root[data-theme='light'] .number-btn,
+:root[data-theme='light'] .action-btn,
+:root[data-theme='light'] .extra-btn {
+  background: rgba(240, 233, 225, 0.65);
+  border-color: rgba(108, 74, 44, 0.13);
+}
+
+:root[data-theme='light'] .number-btn:hover,
+:root[data-theme='light'] .action-btn:hover,
+:root[data-theme='light'] .extra-btn:hover {
+  background: rgba(229, 221, 209, 0.95);
+  border-color: rgba(108, 74, 44, 0.26);
+}
+
+/* ─ Pencil mode selected — warm green variant ─ */
+:root[data-theme='light'] .pencil-btn.selected {
+  border-color: #1E9660 !important;
+  background: rgba(30, 150, 96, 0.10) !important;
+  color: #196B48 !important;
+}
+
+/* ─ Start / auth primary action buttons ─ */
+:root[data-theme='light'] .start-button,
+:root[data-theme='light'] .auth-action-btn {
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+:root[data-theme='light'] .start-button:hover,
+:root[data-theme='light'] .auth-action-btn:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ─ Warm scrollbars ─ */
+:root[data-theme='light'] .right-panel::-webkit-scrollbar-thumb,
+:root[data-theme='light'] .right-panel-2::-webkit-scrollbar-thumb,
+:root[data-theme='light'] .welcome-modal::-webkit-scrollbar-thumb,
+:root[data-theme='light'] .modal-content::-webkit-scrollbar-thumb,
+:root[data-theme='light'] .howto-modal::-webkit-scrollbar-thumb {
+  background: rgba(108, 74, 44, 0.24);
+}
+
+:root[data-theme='light'] .right-panel::-webkit-scrollbar-thumb:hover,
+:root[data-theme='light'] .right-panel-2::-webkit-scrollbar-thumb:hover,
+:root[data-theme='light'] .welcome-modal::-webkit-scrollbar-thumb:hover,
+:root[data-theme='light'] .modal-content::-webkit-scrollbar-thumb:hover,
+:root[data-theme='light'] .howto-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 74, 44, 0.44);
+}
+
+/* ─ Settings / leaderboard tabs ─ */
+:root[data-theme='light'] .settings-tab.active {
+  background: var(--color-surface-overlay);
+  box-shadow: 0 1px 4px rgba(80, 52, 24, 0.14);
+}
+
+:root[data-theme='light'] .lb-tab.active {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+:root[data-theme='light'] .lb-tab:not(.active):hover {
+  background: rgba(229, 221, 209, 0.80);
+}
+
+/* ─ Difficulty cards ─ */
+:root[data-theme='light'] .difficulty-btn {
+  background: rgba(240, 233, 225, 0.72);
+  border-color: rgba(108, 74, 44, 0.14);
+}
+
+:root[data-theme='light'] .difficulty-btn:hover {
+  background: rgba(229, 221, 209, 0.95);
+  box-shadow: 0 8px 28px rgba(80, 52, 24, 0.18);
+  border-color: rgba(108, 74, 44, 0.26);
+}
+
+:root[data-theme='light'] .difficulty-btn.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.16);
+}
+
+/* ─ Continue attempt pill — warmer teal ─ */
+:root[data-theme='light'] .continue-attempt-btn {
+  border-color: rgba(30, 140, 110, 0.50);
+  background: rgba(30, 140, 110, 0.09);
+  color: #176B52;
+}
+
+:root[data-theme='light'] .continue-attempt-btn:hover {
+  background: rgba(30, 140, 110, 0.18);
+  border-color: #176B52;
+  box-shadow: 0 4px 14px rgba(30, 140, 110, 0.18);
+}
+
+/* ─ Complete-modal stat rows ─ */
+:root[data-theme='light'] .complete-stat-row {
+  background: rgba(240, 233, 225, 0.75);
+}
+
+/* ─ Complete board strip ─ */
+:root[data-theme='light'] .complete-board-strip {
+  background: rgba(229, 221, 209, 0.65);
+}
+
+:root[data-theme='light'] .complete-board-header {
+  background: rgba(240, 233, 225, 0.95);
+}
+
+/* ─ Warning / danger badges ─ */
+:root[data-theme='light'] .confirm-reset-warning {
+  background: rgba(146, 64, 14, 0.07);
+  border-color: rgba(146, 64, 14, 0.18);
+}
+
+/* ─ Settings logout button ─ */
+:root[data-theme='light'] .settings-logout-btn {
+  background: rgba(185, 28, 28, 0.06);
+  border-color: rgba(185, 28, 28, 0.26);
+  color: #A82828;
+}
+
+:root[data-theme='light'] .settings-logout-btn:hover {
+  background: rgba(185, 28, 28, 0.12);
+  border-color: rgba(185, 28, 28, 0.44);
+  color: #C03030;
+}
+
+/* ─ Leaderboard table sticky header ─ */
+:root[data-theme='light'] .leaderboard-table th {
+  background: rgba(240, 233, 225, 0.97);
+}
+
+/* ─ User dropdown ─ */
+:root[data-theme='light'] .user-dropdown {
+  background: var(--color-surface-overlay);
+  border-color: rgba(108, 74, 44, 0.16);
+  box-shadow: 0 6px 20px rgba(80, 52, 24, 0.18);
+}
+
+/* ─ HowTo shot slot ─ */
+:root[data-theme='light'] .howto-shot-slot {
+  background: linear-gradient(145deg, rgba(240,233,225,0.55), rgba(229,221,209,0.55));
+  border-color: rgba(108, 74, 44, 0.22);
+}
+
+/* ─ Tab paused icon circle ─ */
+:root[data-theme='light'] .tab-paused-icon {
+  background: var(--color-accent-muted);
+  border-color: rgba(124, 58, 237, 0.28);
 }

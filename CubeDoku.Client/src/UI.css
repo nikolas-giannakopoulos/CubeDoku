@@ -250,9 +250,10 @@
 
 .number-btn.selected,
 .action-btn.selected {
-    border-color: white !important;
+    border-color: var(--color-accent) !important;
     border-width: 2px;
-    color: white !important;
+    color: var(--color-accent) !important;
+    background: var(--color-accent-muted) !important;
 }
 
 /* Action Buttons */
@@ -717,7 +718,7 @@
 .auth-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.72);
+    background: var(--color-overlay-backdrop);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     display: flex;

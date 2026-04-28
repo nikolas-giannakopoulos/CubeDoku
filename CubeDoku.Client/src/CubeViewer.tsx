@@ -1870,6 +1870,14 @@ function CubeViewer() {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
             lastActionTimeRef.current = now;
             setIsSolved(true);
+            gameActiveRef.current = false;
+            // Clear the saved slot — the game is finished
+            clearProgress(currentDifficultyRef.current);
+            setSavedProgress(prev => {
+                const next = { ...prev };
+                delete next[currentDifficultyRef.current];
+                return next;
+            });
             await handleGameComplete();
         } catch (err) {
             console.error('[DEV] Auto-solve failed:', err);

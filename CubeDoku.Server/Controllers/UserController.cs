@@ -18,6 +18,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
         public int Score { get; set; }
         public int DurationSeconds { get; set; }
         public int Mistakes { get; set; }
+        public int HintsUsed { get; set; }
         public bool IsPlayer { get; set; }
     }
 
@@ -29,7 +30,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
         public List<LeaderboardRowDto> NearbyRows { get; set; } = [];
     }
 
-    private async Task<List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes)>>
+    private async Task<List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes, int HintsUsed)>>
         GetPuzzleLeaderboardRows(string difficulty, DateOnly puzzleDate)
     {
         return await db.GameResults
@@ -38,17 +39,18 @@ public class UserController(ApplicationDbContext db) : ControllerBase
             .OrderByDescending(r => r.Score)
             .ThenBy(r => r.DurationSeconds)
             .ThenBy(r => r.CompletedAt)
-            .Select(r => new ValueTuple<Guid, string, int, int, int>(
+            .Select(r => new ValueTuple<Guid, string, int, int, int, int>(
                 r.Id,
                 r.User.Username,
                 r.Score,
                 r.DurationSeconds,
-                r.Mistakes))
+                r.Mistakes,
+                r.HintsUsed))
             .ToListAsync();
     }
 
     private RankedResult BuildRankedResult(
-        List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes)> rows,
+        List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes, int HintsUsed)> rows,
         Guid playerResultId,
         string playerName)
     {
@@ -73,6 +75,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                 Score = row.Score,
                 DurationSeconds = row.DurationSeconds,
                 Mistakes = row.Mistakes,
+                HintsUsed = row.HintsUsed,
                 IsPlayer = row.Id == playerResultId
             });
         }
@@ -87,7 +90,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
     }
 
     private RankedResult BuildPreviewRankedResult(
-        List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes)> rows,
+        List<(Guid Id, string Username, int Score, int DurationSeconds, int Mistakes, int HintsUsed)> rows,
         PreviewRankRequest req,
         string playerName)
     {
@@ -115,6 +118,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                     Score = req.Score,
                     DurationSeconds = req.DurationSeconds,
                     Mistakes = req.Mistakes,
+                    HintsUsed = req.HintsUsed,
                     IsPlayer = true
                 });
                 inserted = true;
@@ -128,6 +132,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                 Score = row.Score,
                 DurationSeconds = row.DurationSeconds,
                 Mistakes = row.Mistakes,
+                HintsUsed = row.HintsUsed,
                 IsPlayer = false
             });
             currentRank++;
@@ -142,6 +147,7 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                 Score = req.Score,
                 DurationSeconds = req.DurationSeconds,
                 Mistakes = req.Mistakes,
+                HintsUsed = req.HintsUsed,
                 IsPlayer = true
             });
         }
@@ -173,7 +179,8 @@ public class UserController(ApplicationDbContext db) : ControllerBase
             PuzzleDate = req.PuzzleDate,
             DurationSeconds = req.DurationSeconds,
             Mistakes = req.Mistakes,
-            Score = req.Score
+            Score = req.Score,
+            HintsUsed = req.HintsUsed
         };
 
         db.GameResults.Add(result);
@@ -253,7 +260,8 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                     r.PuzzleDate,
                     r.Score,
                     r.DurationSeconds,
-                    r.Mistakes
+                    r.Mistakes,
+                    r.HintsUsed
                 })
         });
     }
@@ -302,7 +310,8 @@ public class UserController(ApplicationDbContext db) : ControllerBase
                 r.Difficulty,
                 r.Score,
                 r.DurationSeconds,
-                r.Mistakes
+                r.Mistakes,
+                r.HintsUsed
             })
             .ToListAsync();
 

@@ -20,4 +20,6 @@ public class GameResult
     public int Mistakes { get; set; }
 
     public int Score { get; set; }
+
+    public int HintsUsed { get; set; }
 }

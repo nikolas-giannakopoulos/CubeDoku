@@ -12,6 +12,7 @@ interface LeaderboardEntry {
     score: number;
     durationSeconds: number;
     mistakes: number;
+    hintsUsed: number;
 }
 
 interface LeaderboardModalProps {
@@ -88,7 +89,8 @@ export const LeaderboardModal = ({
         e.difficulty === pinnedEntry.difficulty &&
         e.score === pinnedEntry.score &&
         e.durationSeconds === pinnedEntry.durationSeconds &&
-        e.mistakes === pinnedEntry.mistakes
+        e.mistakes === pinnedEntry.mistakes &&
+        e.hintsUsed === pinnedEntry.hintsUsed
     );
     const displayedRows = shouldPin && !hasPinned ? [pinnedEntry, ...rows] : rows;
 
@@ -131,6 +133,7 @@ export const LeaderboardModal = ({
                                     <th>Score</th>
                                     <th>Time</th>
                                     <th>Mistakes</th>
+                                    <th>Hints</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -143,6 +146,7 @@ export const LeaderboardModal = ({
                                             <td>{entry.score}</td>
                                             <td>{formatTime(entry.durationSeconds)}</td>
                                             <td>{entry.mistakes}</td>
+                                            <td>{entry.hintsUsed ?? 0}</td>
                                         </tr>
                                     );
                                 })}

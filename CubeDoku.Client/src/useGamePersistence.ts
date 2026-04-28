@@ -12,6 +12,7 @@ export type PersistedGameState = {
     mistakes: number;
     score: number;
     completedFaces: string[];
+    hintsUsed: number;
     savedAt: number; // epoch ms
 };
 

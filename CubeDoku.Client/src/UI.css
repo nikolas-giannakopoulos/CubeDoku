@@ -326,6 +326,38 @@
     color: #EAB308;
 }
 
+.hint-btn-exhausted {
+    border-color: var(--color-error) !important;
+    background: rgba(220, 38, 38, 0.1) !important;
+}
+
+.hint-btn-exhausted svg {
+    color: var(--color-error) !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.hint-btn-shake {
+    animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.hint-counter {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.hint-counter-exhausted {
+    color: var(--color-error);
+    font-weight: 600;
+}
+
 .pencil-btn:hover {
     border-color: #22C55E !important;
 }
@@ -696,29 +728,59 @@
 
 .complete-actions {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
-.complete-primary,
-.complete-secondary {
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface-elevated);
-    color: var(--color-text-primary);
-    padding: 10px 14px;
+.complete-btn-play-again,
+.complete-btn-menu {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.925rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
-    font-weight: 600;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    letter-spacing: -0.01em;
 }
 
-.complete-primary {
+.complete-btn-play-again {
     background: var(--color-accent);
     border-color: var(--color-accent);
     color: #fff;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
-.complete-secondary {
-    margin-left: auto;
+.complete-btn-play-again:hover {
+    background: color-mix(in srgb, var(--color-accent) 85%, #fff);
+    border-color: color-mix(in srgb, var(--color-accent) 85%, #fff);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.complete-btn-play-again:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.complete-btn-menu {
+    background: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.complete-btn-menu:hover {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border-hover);
+    color: var(--color-text-primary);
+    transform: translateY(-1px);
+}
+
+.complete-btn-menu:active {
+    transform: translateY(0);
 }
 
 .auth-overlay {

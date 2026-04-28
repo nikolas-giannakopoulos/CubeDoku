@@ -101,6 +101,7 @@ type CompletionSummary = {
     durationSeconds: number;
     mistakes: number;
     score: number;
+    hintsUsed: number;
     difficulty: 'Classic' | 'BrainTerror';
     puzzleDate: string;
     playerName: string;
@@ -826,6 +827,8 @@ function CubeViewer() {
     const [isHintConfirmOpen, setIsHintConfirmOpen] = useState(false);
     const [hintBusy, setHintBusy] = useState(false);
     const [hintError, setHintError] = useState('');
+    const [hintsUsed, setHintsUsed] = useState(0);
+    const [hintBtnShake, setHintBtnShake] = useState(false);
     const [programmaticPressCellId, setProgrammaticPressCellId] = useState<string | null>(null);
     const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
     const [authOpenedFrom, setAuthOpenedFrom] = useState<'welcome' | 'top' | 'settings' | 'complete' | null>(null);
@@ -857,6 +860,7 @@ function CubeViewer() {
     const lastActionTimeRef = useRef<number>(0);
     const mistakesRef = useRef<number>(0);
     const scoreRef = useRef<number>(0);
+    const hintsUsedRef = useRef<number>(0);
     const completedFacesRef = useRef<Set<string>>(new Set());
     const currentDifficultyRef = useRef<'Classic' | 'BrainTerror'>('Classic');
     const puzzleDateRef = useRef<string>('');
@@ -951,6 +955,7 @@ function CubeViewer() {
             gameTimer,
             mistakes: mistakesRef.current,
             score: scoreRef.current,
+            hintsUsed: hintsUsedRef.current,
             completedFaces: [...completedFacesRef.current],
             savedAt: Date.now(),
         };
@@ -1060,7 +1065,8 @@ function CubeViewer() {
                         puzzleDate: summary.puzzleDate,
                         durationSeconds: summary.durationSeconds,
                         mistakes: summary.mistakes,
-                        score: summary.score
+                        score: summary.score,
+                        hintsUsed: summary.hintsUsed
                     })
                 });
             };
@@ -1163,6 +1169,7 @@ function CubeViewer() {
             durationSeconds: gameTimer,
             mistakes: mistakesRef.current,
             score: scoreRef.current,
+            hintsUsed: hintsUsedRef.current,
             difficulty: currentDifficultyRef.current,
             puzzleDate: puzzleDateRef.current,
             playerName: isLoggedIn && user?.username ? user.username : 'Player 1',
@@ -1365,6 +1372,8 @@ function CubeViewer() {
         });
     };
 
+    const HINT_LIMITS: Record<'Classic' | 'BrainTerror', number> = { Classic: 5, BrainTerror: 3 };
+
     const handleHintConfirm = async () => {
         if (isWelcomeOpen || isSolved || hintBusy) return;
         setHintError('');
@@ -1393,6 +1402,10 @@ function CubeViewer() {
             if (!moveSuccess) {
                 throw new Error('Could not apply hint move.');
             }
+
+            // Increment hint counter
+            hintsUsedRef.current += 1;
+            setHintsUsed(hintsUsedRef.current);
 
             lockHintCell(hintCellId, hintValue);
             await sleep(40);
@@ -1756,6 +1769,8 @@ function CubeViewer() {
         setCurrentScore(0);
         setIsSolved(false);
         setCompletionSummary(null);
+        hintsUsedRef.current = 0;
+        setHintsUsed(0);
 
         setSelectedDifficulty(difficulty);
         setIsWelcomeOpen(false);
@@ -1811,6 +1826,8 @@ function CubeViewer() {
         setCellNotes({});
         puzzleDateRef.current = new Date().toISOString().split('T')[0];
         gameActiveRef.current = true;
+        hintsUsedRef.current = 0;
+        setHintsUsed(0);
         // Restore board to original locked cells only
         setMockBoardData([...lockedCellsRef.current]);
     };
@@ -1837,6 +1854,8 @@ function CubeViewer() {
         setSelectedDifficulty(state.difficulty);
         setSelectedNumber(null);
         setIsPencilMode(false);
+        hintsUsedRef.current = state.hintsUsed ?? 0;
+        setHintsUsed(state.hintsUsed ?? 0);
 
         lockedCellsRef.current = state.lockedCells;
         setMockBoardData(state.boardData.map(c => ({ ...c })));
@@ -2105,33 +2124,23 @@ function CubeViewer() {
                         )}
 
                         <div className="complete-actions">
-                            {!completionSummary?.saved && isCompletionAuthenticated && !!completionSummary?.saveError && (
-                                <button
-                                    className="complete-primary"
-                                    onClick={() => {
-                                        if (completionSummary) {
-                                            saveCompletionSummary({
-                                                ...completionSummary,
-                                                playerName: user?.username ?? completionSummary.playerName
-                                            }).catch((e) => console.error('Retry save failed', e));
-                                        }
-                                    }}
-                                >
-                                    Retry Save
-                                </button>
-                            )}
                             <button
-                                className="complete-primary"
+                                className="complete-btn-play-again"
                                 onClick={() => {
-                                    if (completionSummary) {
-                                        startGameFromServer(completionSummary.difficulty);
-                                    }
+                                    setCompletionSummary(null);
+                                    handleConfirmReset();
                                 }}
                             >
                                 Play Again
                             </button>
-                            <button className="complete-secondary" onClick={() => setCompletionSummary(null)}>
-                                Close
+                            <button
+                                className="complete-btn-menu"
+                                onClick={() => {
+                                    setCompletionSummary(null);
+                                    setIsWelcomeOpen(true);
+                                }}
+                            >
+                                Main Menu
                             </button>
                         </div>
                     </div>
@@ -2141,7 +2150,7 @@ function CubeViewer() {
                             <p className="complete-rank guest" style={{ margin: '0 0 16px 0', fontSize: '0.92rem' }}>
                                 Log in or sign up now so your run is submitted and saved in the official leaderboard.
                             </p>
-                            <button className="complete-primary" onClick={() => { setAuthOpenedFrom('complete'); setIsAuthOpen(true); }} style={{ margin: 0, width: '100%' }}>
+                            <button className="complete-btn-play-again" onClick={() => { setAuthOpenedFrom('complete'); setIsAuthOpen(true); }} style={{ margin: 0 }}>
                                 Log In / Sign Up
                             </button>
                         </div>
@@ -2228,9 +2237,18 @@ function CubeViewer() {
                         <LuPencil size={20} />
                     </button>
                     <button
-                        className="action-btn hint-btn"
+                        className={`action-btn hint-btn${
+                            hintsUsed >= HINT_LIMITS[currentDifficultyRef.current] ? ' hint-btn-exhausted' : ''
+                        }${hintBtnShake ? ' hint-btn-shake' : ''}`}
                         title="Hint"
                         onClick={() => {
+                            const limit = HINT_LIMITS[currentDifficultyRef.current];
+                            if (hintsUsed >= limit) {
+                                // Shake animation
+                                setHintBtnShake(true);
+                                setTimeout(() => setHintBtnShake(false), 600);
+                                return;
+                            }
                             setHintError('');
                             setIsHintConfirmOpen(true);
                         }}
@@ -2239,6 +2257,13 @@ function CubeViewer() {
                         <LuLightbulb size={20} />
                     </button>
                 </div>
+                {!isWelcomeOpen && (
+                    <div className="hint-counter">
+                        <span className={hintsUsed >= HINT_LIMITS[currentDifficultyRef.current] ? 'hint-counter-exhausted' : ''}>
+                            {hintsUsed}/{HINT_LIMITS[currentDifficultyRef.current]} hints used
+                        </span>
+                    </div>
+                )}
                 {hintError && !isHintConfirmOpen && (
                     <div
                         style={{

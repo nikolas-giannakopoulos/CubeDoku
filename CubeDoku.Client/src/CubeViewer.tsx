@@ -2098,17 +2098,13 @@ function CubeViewer() {
                                     : 'Saving your result to the official leaderboard...'}
                             </p>
                         ) : (
-                            <p className="complete-rank guest">
-                                Log in or sign up now so your run is submitted and saved in the official leaderboard.
+                            <p className="complete-rank">
+                                You are <strong>#{completionSummary.rank ?? '-'}</strong> on this puzzle's leaderboard
+                                {completionSummary.totalPlayers ? ` out of ${completionSummary.totalPlayers} players.` : '.'}
                             </p>
                         )}
 
                         <div className="complete-actions">
-                            {!completionSummary?.saved && !isCompletionAuthenticated && (
-                                <button className="complete-primary" onClick={() => { setAuthOpenedFrom('complete'); setIsAuthOpen(true); }}>
-                                    Log In / Sign Up
-                                </button>
-                            )}
                             {!completionSummary?.saved && isCompletionAuthenticated && !!completionSummary?.saveError && (
                                 <button
                                     className="complete-primary"
@@ -2139,6 +2135,17 @@ function CubeViewer() {
                             </button>
                         </div>
                     </div>
+
+                    {!completionSummary?.saved && !isCompletionAuthenticated && (
+                        <div className={`complete-modal${completionT.isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={e => e.stopPropagation()} style={{ marginTop: '12px', padding: '16px 24px' }}>
+                            <p className="complete-rank guest" style={{ margin: '0 0 16px 0', fontSize: '0.92rem' }}>
+                                Log in or sign up now so your run is submitted and saved in the official leaderboard.
+                            </p>
+                            <button className="complete-primary" onClick={() => { setAuthOpenedFrom('complete'); setIsAuthOpen(true); }} style={{ margin: 0, width: '100%' }}>
+                                Log In / Sign Up
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
             <ProfileModal

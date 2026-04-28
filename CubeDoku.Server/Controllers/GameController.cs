@@ -187,6 +187,25 @@ namespace CubeDoku.Server.Controllers
                     updatedCells.Add(newCell);
                 }
 
+                // Validate ALL filled cells so CheckIfSolved sees accurate error states
+                // across the entire board — not just the one cell that was just placed.
+                // Without this, cells placed with wrong values keep their default (non-Error)
+                // state and CheckIfSolved incorrectly returns true when the board is full.
+                foreach (var face in Enum.GetValues<CubeFaces>())
+                {
+                    for (int row = 0; row < 3; row++)
+                    {
+                        for (int column = 0; column < 3; column++)
+                        {
+                            var cell = cube.getCell(new CellPosition(face, row, column));
+                            if (cell.getNumber() != 0 && cell != newCell)
+                            {
+                                checker.IndividualChecker(cell, cube);
+                            }
+                        }
+                    }
+                }
+
                 var response = ConvertToMoveResponse(updatedCells, cube);
                 return Ok(response);
             }

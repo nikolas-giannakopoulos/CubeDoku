@@ -869,6 +869,7 @@ function CubeViewer() {
     const [hasCompletionAuthSuccess, setHasCompletionAuthSuccess] = useState(false);
     const orbitControlsRef = useRef<any>(null);
     const hintRotateRafRef = useRef<number | null>(null);
+    const isSavingResultRef = useRef(false);
 
     // Modal transition hooks for inline modals
     const confirmResetT = useModalTransition(isConfirmResetOpen);
@@ -1046,53 +1047,60 @@ function CubeViewer() {
     };
 
     const saveCompletionSummary = async (summary: CompletionSummary) => {
-        const sendCompleteRequest = async (authToken: string) => {
-            return await fetch('/api/user/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                body: JSON.stringify({
-                    difficulty: summary.difficulty,
-                    puzzleDate: summary.puzzleDate,
-                    durationSeconds: summary.durationSeconds,
-                    mistakes: summary.mistakes,
-                    score: summary.score
-                })
-            });
-        };
+        if (isSavingResultRef.current) return;
+        isSavingResultRef.current = true;
 
-        const initialToken = localStorage.getItem('token') ?? token;
-        if (!initialToken) throw new Error('Not authenticated yet.');
+        try {
+            const sendCompleteRequest = async (authToken: string) => {
+                return await fetch('/api/user/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({
+                        difficulty: summary.difficulty,
+                        puzzleDate: summary.puzzleDate,
+                        durationSeconds: summary.durationSeconds,
+                        mistakes: summary.mistakes,
+                        score: summary.score
+                    })
+                });
+            };
 
-        let response = await sendCompleteRequest(initialToken);
+            const initialToken = localStorage.getItem('token') ?? token;
+            if (!initialToken) throw new Error('Not authenticated yet.');
 
-        if (response.status === 401 || response.status === 403) {
-            const latestToken = localStorage.getItem('token') ?? token;
-            if (latestToken && latestToken !== initialToken) {
-                response = await sendCompleteRequest(latestToken);
-            }
-        }
+            let response = await sendCompleteRequest(initialToken);
 
-        if (!response.ok) {
-            const errorText = await response.text();
             if (response.status === 401 || response.status === 403) {
-                logout();
-                throw new Error(errorText || 'Your session expired. Please log in again.');
+                const latestToken = localStorage.getItem('token') ?? token;
+                if (latestToken && latestToken !== initialToken) {
+                    response = await sendCompleteRequest(latestToken);
+                }
             }
-            throw new Error(errorText || `Save failed (${response.status}).`);
-        }
 
-        const saveData = await response.json();
-        setCompletionSummary({
-            ...summary,
-            saved: true,
-            saveError: undefined,
-            rank: saveData.rank,
-            startRank: saveData.startRank,
-            totalPlayers: saveData.totalPlayers,
-            nearbyRows: saveData.nearbyRows,
-            playerName: saveData.username ?? user?.username ?? summary.playerName
-        });
-        setHasCompletionAuthSuccess(false);
+            if (!response.ok) {
+                const errorText = await response.text();
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    throw new Error(errorText || 'Your session expired. Please log in again.');
+                }
+                throw new Error(errorText || `Save failed (${response.status}).`);
+            }
+
+            const saveData = await response.json();
+            setCompletionSummary({
+                ...summary,
+                saved: true,
+                saveError: undefined,
+                rank: saveData.rank,
+                startRank: saveData.startRank,
+                totalPlayers: saveData.totalPlayers,
+                nearbyRows: saveData.nearbyRows,
+                playerName: saveData.username ?? user?.username ?? summary.playerName
+            });
+            setHasCompletionAuthSuccess(false);
+        } finally {
+            isSavingResultRef.current = false;
+        }
     };
 
     const isAnyModalOpen = isWelcomeOpen || isProfileOpen || isAuthOpen || isLeaderboardOpen || isSettingsOpen || isHowToPlayOpen || isConfirmResetOpen || isHintConfirmOpen || !!completionSummary || isPausedByOtherTab;

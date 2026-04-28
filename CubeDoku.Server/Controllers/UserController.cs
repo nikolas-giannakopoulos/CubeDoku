@@ -258,6 +258,31 @@ public class UserController(ApplicationDbContext db) : ControllerBase
         });
     }
 
+    // GET /api/user/today-best  — returns the current user's best time for today's puzzle (per difficulty)
+    [HttpGet("today-best")]
+    [Authorize]
+    public async Task<IActionResult> GetTodayBest()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var todayResults = await db.GameResults
+            .Where(r => r.UserId == userId && r.PuzzleDate == today)
+            .ToListAsync();
+
+        int? ClassicBest(string diff) =>
+            todayResults.Where(r => r.Difficulty == diff).Any()
+                ? todayResults.Where(r => r.Difficulty == diff).Min(r => r.DurationSeconds)
+                : null;
+
+        return Ok(new
+        {
+            Classic = ClassicBest("Classic"),
+            BrainTerror = ClassicBest("BrainTerror"),
+            PuzzleDate = today
+        });
+    }
+
     // GET /api/user/leaderboard?date=YYYY-MM-DD  (defaults to today UTC)
     [HttpGet("leaderboard")]
     public async Task<IActionResult> GetLeaderboard([FromQuery] string? date = null)

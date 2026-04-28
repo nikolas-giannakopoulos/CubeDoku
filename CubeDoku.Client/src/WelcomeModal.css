@@ -388,6 +388,11 @@
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
     user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
 }
 
 .difficulty-btn:hover {
@@ -464,6 +469,24 @@
 .continue-attempt-btn:active {
     transform: translateY(0);
     box-shadow: none;
+}
+
+/* ── Wrapper for difficulty button and best time line ─────────────── */
+.difficulty-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Today's personal best line under each difficulty card ─────────────── */
+.difficulty-today-best-line {
+    text-align: center;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    opacity: 0.8;
+    user-select: none;
 }
 
 /* Start Button */

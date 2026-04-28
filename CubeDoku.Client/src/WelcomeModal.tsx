@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import './WelcomeModal.css';
 import classicIcon from './assets/classic.png';
@@ -47,8 +47,21 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [todayBest, setTodayBest] = useState<{ classic: number | null; brainTerror: number | null } | null>(null);
 
     const handleStart = () => handleDifficultySelect(selectedDifficulty);
+
+    // Fetch today's personal best times when the modal opens and the user is logged in
+    useEffect(() => {
+        if (!isLoggedIn || !token || !isOpen) return;
+        const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+        fetch('/api/user/today-best', { headers })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) setTodayBest({ classic: data.classic ?? data.Classic ?? null, brainTerror: data.brainTerror ?? data.BrainTerror ?? null });
+            })
+            .catch(() => { });
+    }, [isLoggedIn, token, isOpen]);
 
     const handleOpenStats = async () => {
         setIsStatsOpen(true);
@@ -136,50 +149,64 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                     <div className="welcome-difficulty">
                         <h2>Select Difficulty</h2>
                         <div className="difficulty-buttons">
-                            <div
-                                className={`difficulty-btn ${selectedDifficulty === 'Classic' ? 'selected' : ''}`}
-                                onClick={() => setSelectedDifficulty('Classic')}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('Classic')}
-                            >
-                                <div className="difficulty-icon">
-                                    <img src={classicIcon} alt="Classic" />
+                            <div className="difficulty-wrapper">
+                                <div
+                                    className={`difficulty-btn ${selectedDifficulty === 'Classic' ? 'selected' : ''}`}
+                                    onClick={() => setSelectedDifficulty('Classic')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('Classic')}
+                                >
+                                    <div className="difficulty-icon">
+                                        <img src={classicIcon} alt="Classic" />
+                                    </div>
+                                    <div className="difficulty-name">Classic</div>
+                                    <div className="difficulty-desc">Standard rules. Good for beginners.</div>
+                                    {savedProgress?.['Classic'] && onContinue && (
+                                        <button
+                                            id="continue-classic-btn"
+                                            className="continue-attempt-btn"
+                                            onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['Classic']!); }}
+                                        >
+                                            <FaPlay size={10} />
+                                            Continue — {formatTime(savedProgress['Classic']!.gameTimer)}
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="difficulty-name">Classic</div>
-                                <div className="difficulty-desc">Standard rules. Good for beginners.</div>
-                                {savedProgress?.['Classic'] && onContinue && (
-                                    <button
-                                        id="continue-classic-btn"
-                                        className="continue-attempt-btn"
-                                        onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['Classic']!); }}
-                                    >
-                                        <FaPlay size={10} />
-                                        Continue — {formatTime(savedProgress['Classic']!.gameTimer)}
-                                    </button>
+                                {isLoggedIn && todayBest?.classic != null && (
+                                    <div className="difficulty-today-best-line">
+                                        Best today: {formatTime(todayBest.classic)}
+                                    </div>
                                 )}
                             </div>
-                            <div
-                                className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
-                                onClick={() => setSelectedDifficulty('BrainTerror')}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('BrainTerror')}
-                            >
-                                <div className="difficulty-icon">
-                                    <img src={brainterrorIcon} alt="Brain Terror" />
+                            <div className="difficulty-wrapper">
+                                <div
+                                    className={`difficulty-btn ${selectedDifficulty === 'BrainTerror' ? 'selected' : ''}`}
+                                    onClick={() => setSelectedDifficulty('BrainTerror')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('BrainTerror')}
+                                >
+                                    <div className="difficulty-icon">
+                                        <img src={brainterrorIcon} alt="Brain Terror" />
+                                    </div>
+                                    <div className="difficulty-name">Brain Terror</div>
+                                    <div className="difficulty-desc">Fewer clues. For truly deranged minds.</div>
+                                    {savedProgress?.['BrainTerror'] && onContinue && (
+                                        <button
+                                            id="continue-brainTerror-btn"
+                                            className="continue-attempt-btn"
+                                            onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['BrainTerror']!); }}
+                                        >
+                                            <FaPlay size={10} />
+                                            Continue — {formatTime(savedProgress['BrainTerror']!.gameTimer)}
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="difficulty-name">Brain Terror</div>
-                                <div className="difficulty-desc">Fewer clues. For truly deranged minds.</div>
-                                {savedProgress?.['BrainTerror'] && onContinue && (
-                                    <button
-                                        id="continue-brainTerror-btn"
-                                        className="continue-attempt-btn"
-                                        onClick={(e) => { e.stopPropagation(); onContinue(savedProgress['BrainTerror']!); }}
-                                    >
-                                        <FaPlay size={10} />
-                                        Continue — {formatTime(savedProgress['BrainTerror']!.gameTimer)}
-                                    </button>
+                                {isLoggedIn && todayBest?.brainTerror != null && (
+                                    <div className="difficulty-today-best-line">
+                                        Best today: {formatTime(todayBest.brainTerror)}
+                                    </div>
                                 )}
                             </div>
                         </div>

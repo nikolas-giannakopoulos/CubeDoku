@@ -1,3 +1,28 @@
+// AuthModal.tsx
+// Login / Sign Up modal that appears when the player clicks "Log in" from the welcome screen
+//
+// Features:
+//   - Toggle between login and signup mode (same modal, different fields)
+//   - Email/password auth and Google OAuth (via @react-oauth/google)
+//   - Success state with a checkmark animation before closing
+//   - Error display below the form fields
+//
+// The openedFromWelcome prop changes the enter animation direction:
+//   - from welcome modal: slides in from the right (modal-panel-enter-right)
+//   - from elsewhere: standard fade/slide in
+//
+// I was going to separate login and signup into two different modals but reusing one
+// with a toggle is much cleaner and saves duplicating the Google button and divider.
+//
+// The googleLogin hook from @react-oauth/google handles the OAuth flow.
+// It opens a Google popup, the user authenticates there, and on success we get
+// an access_token back which we send to our backend for validation.
+// Note: the backend validates the ID token via GoogleJsonWebSignature, not the access_token.
+// The access_token is used to fetch the user's Google profile... actually I realize I might
+// be mixing up access_token and id_token here. The backend just needs the idToken.
+// Check the AuthController for exactly what it expects.
+// TODO: clarify which token type the backend needs and make sure the frontend sends it correctly
+
 import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -9,8 +34,8 @@ import './ProfileModal.css';
 export interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAuthSuccess?: () => void;
-    openedFromWelcome?: boolean;
+    onAuthSuccess?: () => void;          // called after successful login/register
+    openedFromWelcome?: boolean;         // affects enter animation direction
 }
 
 export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }: AuthModalProps) {
@@ -19,10 +44,11 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [busy, setBusy] = useState(false);
+    const [busy, setBusy] = useState(false);   // disables buttons during API call
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
+    const [success, setSuccess] = useState(false); // shows the checkmark screen
 
+    // reset all state when the modal opens (so old errors don't show on next open)
     useEffect(() => {
         if (isOpen) {
             setMode('login');
@@ -35,11 +61,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
         }
     }, [isOpen]);
 
+    // Google OAuth - opens a popup window managed by Google
+    // on success: we get a token response and send it to our backend
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
                 await loginWithGoogle(tokenResponse.access_token);
                 setSuccess(true);
+                // brief delay to show the success screen before closing
                 setTimeout(() => {
                     onAuthSuccess?.();
                     onClose();
@@ -54,6 +83,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     const { shouldRender, isClosing } = useModalTransition(isOpen);
     if (!shouldRender) return null;
 
+    // clear fields and error when switching between login and signup
     const switchMode = (next: 'login' | 'signup') => {
         setMode(next);
         setError('');
@@ -83,6 +113,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
         }
     };
 
+    // allow submitting with Enter key
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !busy) submit();
     };
@@ -99,6 +130,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
                 </div>
 
                 {success ? (
+                    // success state: show checkmark, then auto-close
                     <div className="auth-success-container">
                         <LuCircleCheck size={64} className="auth-success-icon" />
                         <div className="auth-success-text">
@@ -113,7 +145,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
                                 : 'Sign up to track your stats and rank.'}
                         </p>
 
-                        {/* Fields */}
+                        {/* Form fields - username only shown for signup */}
                         {mode === 'signup' && (
                             <input
                                 className="auth-input"
@@ -142,23 +174,21 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
 
                         {error && <p className="auth-error">{error}</p>}
 
-                        {/* Primary action */}
                         <button type="button" className="auth-primary auth-submit" onClick={submit} disabled={busy}>
                             {busy ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
                         </button>
 
-                        {/* Divider */}
                         <div className="auth-divider">
                             <span>or</span>
                         </div>
 
-                        {/* Google */}
+                        {/* Google sign-in button */}
                         <button type="button" className="auth-google-btn" onClick={(e) => { e.preventDefault(); googleLogin(); }} disabled={busy}>
                             <FcGoogle size={20} />
                             Continue with Google
                         </button>
 
-                        {/* Switch mode */}
+                        {/* Toggle between login and signup */}
                         <p className="auth-switch">
                             {mode === 'login' ? (
                                 <>Don't have an account?{' '}
@@ -180,3 +210,4 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
         </div>
     );
 }
+

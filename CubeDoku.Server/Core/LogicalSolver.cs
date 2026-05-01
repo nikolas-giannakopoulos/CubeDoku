@@ -1,14 +1,42 @@
+// LogicalSolver.cs
+// Solves a 3D Sudoku using ONLY human-logical techniques (no backtracking/guessing)
+//
+// This serves two purposes in the system:
+//   1. During puzzle generation: verify that a puzzle can be solved logically (no guessing)
+//      and determine its difficulty based on which techniques were required
+//   2. For the hint system: the logical steps recorded here are given to players as hints
+//      (because a logical hint like "Naked Single" is more useful than a random reveal)
+//
+// Techniques implemented (in order of difficulty):
+//   - Naked Singles: cell with only one possible value
+//   - Hidden Singles: number that can only go in one cell on a face
+//   - Basic 12-Sum Deduction: use edge/corner constraints to force values
+//   - Naked Pairs: if two cells on a face have the same two candidates, eliminate from others
+//
+// The solver tracks which technique was used at each step.
+// If a puzzle gets stuck (no technique makes progress) it's either BrainTerror level
+// (requires guessing) or it's truly unsolvable — either way, the generator rejects it.
+//
+// NOTE: this is "CORRECTED VERSION" - earlier I had a bug where UpdateCandidatesAfterPlacement
+// only removed the value from the same face, but didn't recalculate edge/corner candidates.
+// That caused the solver to sometimes think values were valid when they weren't.
+// Fixed by doing a full recalc of all remaining candidates after each placement.
+// It's slower but it's correct.
+
 namespace CubeDoku.Server.Core
 {
-    /// <summary>
-    /// Λύνει 3D Sudoku puzzles χρησιμοποιώντας μόνο ανθρώπινη λογική
-    /// CORRECTED VERSION - fixes candidate updates
-    /// </summary>
     public class LogicalSolver
     {
         private Cube _cube;
+
+        // maps each empty cell position to the set of values it could still legally hold
+        // this is updated after every placement
         private Dictionary<CellPosition, HashSet<int>> _candidates;
+
         private SolvabilityResult _result;
+
+        // debug flag - when true, prints progress to console
+        // useful during development, left in because it's toggled off by default
         private bool _debug = false;
 
         public LogicalSolver(Cube cube, bool debug = false)
@@ -22,6 +50,8 @@ namespace CubeDoku.Server.Core
 
         public SolvabilityResult Result => _result;
 
+        // main entry: apply techniques in order until either solved or stuck
+        // returns the result describing difficulty, whether solved, and the steps taken
         public SolvabilityResult Solve()
         {
             bool progress = true;
@@ -38,12 +68,12 @@ namespace CubeDoku.Server.Core
                     Console.WriteLine($"  Iteration {iterations}, empty cells: {_candidates.Count}");
                 }
 
-                // Classic: Naked Singles + Hidden Singles
+                // Try Classic techniques first (faster/simpler)
                 if (ApplyNakedSingles())
                 {
                     progress = true;
                     maxDifficulty = Max(maxDifficulty, Difficulty.Classic);
-                    continue;
+                    continue; // restart the loop after each successful step
                 }
 
                 if (ApplyHiddenSingles())
@@ -53,7 +83,7 @@ namespace CubeDoku.Server.Core
                     continue;
                 }
 
-                // Brain-Terror: Basic 12-Sum + Naked Pairs
+                // If Classic techniques fail, try BrainTerror techniques
                 if (ApplyBasic12SumDeduction())
                 {
                     progress = true;
@@ -68,7 +98,7 @@ namespace CubeDoku.Server.Core
                     continue;
                 }
 
-                // No progress - stuck!
+                // nothing worked this iteration - we're stuck
                 if (!progress)
                 {
                     if (_debug)
@@ -92,6 +122,7 @@ namespace CubeDoku.Server.Core
 
         #region Initialization
 
+        // build the initial candidates dictionary - for each empty cell, what values are valid?
         private void InitializeCandidates()
         {
             foreach (var face in Enum.GetValues<CubeFaces>())
@@ -117,6 +148,8 @@ namespace CubeDoku.Server.Core
             }
         }
 
+        // compute valid values for a position by trying each number and calling Checker
+        // this is essentially brute-force but we only do it for initialization and after placements
         private HashSet<int> GetPossibleValues(CellPosition pos)
         {
             var possible = new HashSet<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -131,7 +164,7 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            cell.setNumber(0); // Reset
+            cell.setNumber(0); // reset after testing
             return possible;
         }
 
@@ -139,9 +172,13 @@ namespace CubeDoku.Server.Core
 
         #region Solving Techniques
 
+        // Naked Single: a cell with exactly one candidate - that value must go there
+        // this is the most basic technique and handles most of the puzzle
         private bool ApplyNakedSingles()
         {
             bool foundAny = false;
+
+            // collect first because we can't modify the dictionary while iterating it
             var toPlace = new List<(CellPosition pos, int value)>();
 
             foreach (var kvp in _candidates)
@@ -161,6 +198,8 @@ namespace CubeDoku.Server.Core
             return foundAny;
         }
 
+        // Hidden Single: a number that can only go in one cell on a face
+        // even if that cell has multiple candidates, this number is forced there
         private bool ApplyHiddenSingles()
         {
             bool foundAny = false;
@@ -185,6 +224,7 @@ namespace CubeDoku.Server.Core
 
                     if (possiblePositions.Count == 1)
                     {
+                        // only one place this number can go on this face
                         PlaceNumber(possiblePositions[0], num, "Hidden Single");
                         foundAny = true;
                     }
@@ -194,11 +234,14 @@ namespace CubeDoku.Server.Core
             return foundAny;
         }
 
+        // Basic 12-Sum Deduction: when one cell in an edge/corner pair is known,
+        // the other cell's value is forced (12 - known_value)
+        // Only applies if the candidate set for the empty cell contains the required value
         private bool ApplyBasic12SumDeduction()
         {
             bool foundAny = false;
 
-            // Edges
+            // check edges
             foreach (var edgePair in CubeTopology.Edges)
             {
                 var cellA = _cube.getCell(edgePair[0]);
@@ -235,7 +278,7 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // Corners
+            // check corners - same idea but with 3 cells instead of 2
             foreach (var cornerTriple in CubeTopology.Corners)
             {
                 var cellA = _cube.getCell(cornerTriple[0]);
@@ -250,6 +293,7 @@ namespace CubeDoku.Server.Core
 
                 if (filled == 2)
                 {
+                    // two cells are known, the third is forced
                     var emptyPos = valA == 0 ? cornerTriple[0] : (valB == 0 ? cornerTriple[1] : cornerTriple[2]);
                     int required = 12 - (valA + valB + valC);
 
@@ -259,7 +303,7 @@ namespace CubeDoku.Server.Core
                         {
                             _candidates[emptyPos] = new HashSet<int> { required };
 
-                            // Determine which values are filled for the reason string
+                            // build a readable reason string for the hint system
                             var filledValues = new List<int>();
                             if (valA > 0) filledValues.Add(valA);
                             if (valB > 0) filledValues.Add(valB);
@@ -276,12 +320,16 @@ namespace CubeDoku.Server.Core
             return foundAny;
         }
 
+        // Naked Pairs: if two cells on a face share the exact same two candidates,
+        // those two values can be eliminated from all other cells on that face
+        // this is a classic Sudoku technique - I was quite proud when I got this working
         private bool ApplyNakedPairs()
         {
             bool foundAny = false;
 
             foreach (var face in Enum.GetValues<CubeFaces>())
             {
+                // collect all empty positions on this face
                 var facePositions = new List<CellPosition>();
 
                 for (int row = 0; row < 3; row++)
@@ -296,6 +344,7 @@ namespace CubeDoku.Server.Core
                     }
                 }
 
+                // look at all pairs of empty cells on this face
                 for (int i = 0; i < facePositions.Count; i++)
                 {
                     for (int j = i + 1; j < facePositions.Count; j++)
@@ -303,11 +352,13 @@ namespace CubeDoku.Server.Core
                         var pos1 = facePositions[i];
                         var pos2 = facePositions[j];
 
+                        // if both have exactly 2 candidates and they're the same two values → naked pair!
                         if (_candidates[pos1].Count == 2 && _candidates[pos2].Count == 2 &&
                            _candidates[pos1].SetEquals(_candidates[pos2]))
                         {
                             var pairNumbers = _candidates[pos1];
 
+                            // eliminate both values from every other cell on this face
                             foreach (var pos in facePositions)
                             {
                                 if (pos.Equals(pos1) || pos.Equals(pos2)) continue;
@@ -339,10 +390,11 @@ namespace CubeDoku.Server.Core
 
         #region Helper Methods
 
+        // place a value in the cube and record the step for the hint system
         private void PlaceNumber(CellPosition pos, int value, string reason)
         {
             _cube.getCell(pos).setNumber(value);
-            _candidates.Remove(pos);
+            _candidates.Remove(pos); // this cell is no longer empty
 
             var step = new LogicalStep
             {
@@ -358,15 +410,20 @@ namespace CubeDoku.Server.Core
                 Console.WriteLine($"    {step}");
             }
 
-            // Update candidates for affected cells
+            // IMPORTANT: after placing a value, we need to recalculate ALL remaining candidates
+            // because edge/corner constraints might have changed what's valid elsewhere
+            // This is the fix for the bug mentioned at the top of the file
             UpdateCandidatesAfterPlacement(pos, value);
         }
 
+        // recalculate candidates after a placement
+        // first removes the value from the same face (fast, always applicable)
+        // then does a full recalc for all remaining cells (slower but necessary for edge/corner constraints)
         private void UpdateCandidatesAfterPlacement(CellPosition placedPos, int value)
         {
             var face = placedPos.face;
 
-            // Remove from same face
+            // quick removal: this value can't appear again on the same face
             for (int row = 0; row < 3; row++)
             {
                 for (int col = 0; col < 3; col++)
@@ -379,8 +436,10 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // Re-calculate affected edge/corner constraints
-            // This is important!
+            // full recalc: edge/corner constraints changed so we need to recheck everything
+            // this is expensive but I couldn't find a faster way that's still correct
+            // maybe I could only recalc cells in the same edge/corner groups as placedPos?
+            // TODO: optimize this if generation gets slow
             foreach (var pos in _candidates.Keys.ToList())
             {
                 _candidates[pos] = GetPossibleValues(pos);
@@ -402,6 +461,7 @@ namespace CubeDoku.Server.Core
             _result.StepsRequired++;
         }
 
+        // just returns the higher difficulty enum value
         private Difficulty Max(Difficulty a, Difficulty b)
         {
             return (Difficulty)Math.Max((int)a, (int)b);
@@ -410,3 +470,4 @@ namespace CubeDoku.Server.Core
         #endregion
     }
 }
+

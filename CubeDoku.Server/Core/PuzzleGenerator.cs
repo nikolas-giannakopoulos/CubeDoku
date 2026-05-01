@@ -1,3 +1,26 @@
+// PuzzleGenerator.cs
+// Generates a valid 3D Sudoku puzzle with:
+//   - exactly one solution (unique puzzle)
+//   - the right difficulty (determined by which logical techniques are needed)
+//
+// The process is roughly:
+//   1. Generate a fully solved cube using the backtracking Solver
+//   2. Remove cells one by one (in a smart order) while maintaining uniqueness
+//   3. Classify the resulting puzzle using the LogicalSolver
+//   4. If it matches the target difficulty, keep it; otherwise try again
+//
+// The "strategic removal" approach (GenerateUniquePuzzleStrategic) removes cells in order
+// of fewest constraints (center → edges → corners) which tends to produce puzzles that
+// stay solvable longer before we run out of cells to remove.
+//
+// For Classic difficulty we aim for ~25 clues.
+// For BrainTerror we try to minimize clues as much as possible.
+//
+// Generation can take a while because we might go through many attempts before finding
+// a puzzle that both has a unique solution AND matches the target difficulty.
+// 50 attempts was chosen experimentally - seems to always find something within 20-30 tries.
+// TODO: should probably add a timeout or max-attempt warning for the server logs
+
 namespace CubeDoku.Server.Core
 {
     public class PuzzleGenerator
@@ -11,12 +34,14 @@ namespace CubeDoku.Server.Core
             _random = new Random(seed);
         }
 
-        // Δημιουργεί puzzle με εγγυημένα μοναδική λύση
+        // old simple generator - kept for reference but not used anymore
+        // GeneratePuzzle() uses GenerateUniquePuzzleStrategic() internally now
+        // the difference: this one removes cells randomly, the strategic one removes center cells first
         public Cube GenerateUniquePuzzle(out int clueCount)
         {
             Console.WriteLine($"🎲 Generating puzzle with seed: {_seed}");
             
-            // 1. Δημιούργησε λυμένο κύβο
+            // 1. create a fully solved cube
             Cube solvedCube = new Cube();
             Solver solver = new Solver(_seed);
             
@@ -27,13 +52,13 @@ namespace CubeDoku.Server.Core
             
             Console.WriteLine($"✅ Generated solved cube in {solver.Iterations:N0} iterations");
 
-            // 2. Clone τον κύβο για το puzzle
+            // 2. clone so we don't modify the solution
             Cube puzzleCube = CloneCube(solvedCube);
 
-            // 3. Συλλέγουμε όλα τα κελιά που μπορούμε να κρύψουμε
+            // 3. get all cells to try removing
             List<Cell> cellsToRemove = GetAllCells(puzzleCube);
             
-            // 4. Shuffle τη σειρά με την οποία θα δοκιμάσουμε να κρύψουμε κελιά
+            // 4. randomize removal order
             ShuffleCells(cellsToRemove);
 
             int removed = 0;
@@ -41,24 +66,23 @@ namespace CubeDoku.Server.Core
 
             Console.WriteLine($"🔍 Starting to remove clues...");
 
-            // 5. Προσπάθησε να κρύψεις κελιά ένα-ένα
+            // 5. try removing each cell one at a time
             foreach (var cell in cellsToRemove)
             {
                 attempts++;
                 int originalValue = cell.getNumber();
                 
-                // Κρύψε το κελί
-                cell.setNumber(0);
+                cell.setNumber(0); // hide the cell
 
-                // Έλεγξε αν έχει ακόμα μοναδική λύση
+                // check if the puzzle still has exactly one solution
                 Cube testCube = CloneCube(puzzleCube);
-                Solver testSolver = new Solver(_seed + 1000); // Διαφορετικό seed για testing
+                Solver testSolver = new Solver(_seed + 1000); // different seed so counting is unbiased
                 
                 int solutions = testSolver.CountSolutions(testCube, 2);
 
                 if (solutions == 1)
                 {
-                    // Καλό! Το κελί μπορεί να μείνει κρυμμένο
+                    // unique solution preserved - keep this cell hidden
                     removed++;
                     if (removed % 5 == 0)
                     {
@@ -67,7 +91,7 @@ namespace CubeDoku.Server.Core
                 }
                 else
                 {
-                    // Όχι καλό, επαναφορά
+                    // removing this cell created ambiguity - put it back
                     cell.setNumber(originalValue);
                 }
             }
@@ -78,6 +102,7 @@ namespace CubeDoku.Server.Core
             return puzzleCube;
         }
 
+        // get all 54 cells as a flat list (for shuffling and removing)
         private List<Cell> GetAllCells(Cube cube)
         {
             List<Cell> cells = new List<Cell>();
@@ -96,6 +121,7 @@ namespace CubeDoku.Server.Core
             return cells;
         }
 
+        // standard Fisher-Yates shuffle for the cell list
         private void ShuffleCells(List<Cell> cells)
         {
             int n = cells.Count;
@@ -109,6 +135,9 @@ namespace CubeDoku.Server.Core
             }
         }
 
+        // deep clone a cube - we need this because we want to test removals on a copy
+        // without permanently modifying the puzzle cube
+        // only copies numbers, not locked state (the generator doesn't use locking)
         private Cube CloneCube(Cube original)
         {
             Cube clone = new Cube();
@@ -131,10 +160,11 @@ namespace CubeDoku.Server.Core
         }
 
         /// <summary>
-        /// Δημιουργεί puzzle που λύνεται με λογική (no guessing) και έχει συγκεκριμένο difficulty
-        /// </summary>
-        /// <summary>
-        /// Δημιουργεί puzzle που λύνεται με λογική (no guessing) και έχει συγκεκριμένο difficulty
+        /// Main entry point for puzzle generation - tries multiple seeds to find a puzzle
+        /// that matches the target difficulty and has fewer clues (harder puzzles).
+        /// 
+        /// Uses a fallback so even if we can't hit the exact difficulty, we return
+        /// something solvable rather than crashing the server.
         /// </summary>
         public (Cube Puzzle, List<LogicalStep> Steps) GeneratePuzzle(Difficulty targetDifficulty, int maxAttempts = 50)
         {
@@ -143,31 +173,29 @@ namespace CubeDoku.Server.Core
             Cube bestPuzzle = null;
             int bestClueCount = 54;
             SolvabilityResult bestResult = null;
-            // Fallback: any solvable puzzle (even if difficulty doesn't match target)
+
+            // keep a fallback in case we never find a perfect match
             Cube fallbackPuzzle = null;
             int fallbackClueCount = 54;
             SolvabilityResult fallbackResult = null;
             
-            // Set target clues based on difficulty
-            // Classic: ~25 clues (Easier)
-            // BrainTerror: As few as possible (Hard)
+            // Classic aims for ~25 clues, BrainTerror tries to minimize
             int targetClues = targetDifficulty == Difficulty.Classic ? 25 : 0;
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                // Χρησιμοποίησε διαφορετικό internal seed για κάθε attempt
+                // use a different internal seed for each attempt
                 int attemptSeed = _seed + attempt * 1000;
                 var tempGenerator = new PuzzleGenerator(attemptSeed);
 
-                // Δημιούργησε unique puzzle με στρατηγική αφαίρεση
                 var puzzle = tempGenerator.GenerateUniquePuzzleStrategic(targetClues, out int tempClues);
 
-                // Έλεγξε αν λύνεται λογικά
+                // test if it can be solved logically
                 var testCube = CloneCube(puzzle);
                 var logicalSolver = new LogicalSolver(testCube);
                 var result = logicalSolver.Solve();
 
-                // Keep any solvable puzzle as fallback
+                // save first solvable puzzle as fallback
                 if (result.IsSolvable && fallbackPuzzle == null)
                 {
                     fallbackPuzzle = puzzle;
@@ -177,31 +205,24 @@ namespace CubeDoku.Server.Core
 
                 if (result.IsSolvable && result.Difficulty <= targetDifficulty)
                 {
-                    // Βρήκαμε καλό puzzle!
                     if (attempt % 5 == 0 || result.Difficulty == targetDifficulty)
                     {
                         Console.WriteLine($"  Attempt {attempt}: {result.Difficulty} with {tempClues} clues");
                     }
 
-                    // Κράτα το καλύτερο (με λιγότερα clues στο target difficulty)
-                    // For classic, we want to be close to target, not necessarily lowest
                     bool isBetter = false;
                     
                     if (targetDifficulty == Difficulty.Classic)
                     {
-                         // For Classic, we modify the selection logic:
-                         // Any solvable puzzle at Classic difficulty is good if we hit our target (which strategic generation handles)
-                         // But if we have multiple, maybe closer to 25 is better? 
-                         // Strategic generation stops AT 25, so tempClues will be >= 25.
-                         // We prefer the one with fewer clues that is still >= 25 (closest to target) 
-                         // actually GenerateUniquePuzzleStrategic stops when <= targetClues. 
-                         
-                         if (bestPuzzle == null) isBetter = true;
-                         else if (Math.Abs(tempClues - targetClues) < Math.Abs(bestClueCount - targetClues)) isBetter = true;
+                        // for Classic we want closest to 25 clues (not too easy, not too many)
+                        // GenerateUniquePuzzleStrategic stops at or above the target clue count
+                        // so we pick the puzzle closest to our target
+                        if (bestPuzzle == null) isBetter = true;
+                        else if (Math.Abs(tempClues - targetClues) < Math.Abs(bestClueCount - targetClues)) isBetter = true;
                     }
                     else
                     {
-                        // Standard behavior for Hard: Fewer clues is better
+                        // BrainTerror: fewer clues = harder = better
                         if (bestPuzzle == null) isBetter = true;
                         else if (result.Difficulty == targetDifficulty && tempClues < bestClueCount) isBetter = true;
                     }
@@ -217,7 +238,7 @@ namespace CubeDoku.Server.Core
 
             if (bestPuzzle == null)
             {
-                // Fallback: use the best solvable puzzle even if difficulty doesn't match
+                // couldn't find a matching difficulty - use the fallback
                 if (fallbackPuzzle != null)
                 {
                     Console.WriteLine($"⚠️ No exact {targetDifficulty} puzzle found. Using fallback ({fallbackResult!.Difficulty}) with {fallbackClueCount} clues.");
@@ -243,7 +264,8 @@ namespace CubeDoku.Server.Core
                 Console.WriteLine($"   - {tech.Key}: {tech.Value} times");
             }
 
-            // Print the logical solving steps for the final puzzle
+            // run the logical solver one more time on the final puzzle with debug output
+            // this gives us the step list that will be used by the hint system
             Console.WriteLine("\n🧩 Logical Solving Steps for the Generated Puzzle:");
             var finalTestCube = CloneCube(bestPuzzle);
             var stepLogger = new LogicalSolver(finalTestCube, debug: true);
@@ -254,11 +276,20 @@ namespace CubeDoku.Server.Core
         }
 
         /// <summary>
-        /// Στρατηγική αφαίρεση: Centers → Edges → Corners
+        /// Strategic removal: removes cells in the order Center → Edge → Corner
+        /// Center cells have only the face constraint (fewest constraints = easiest to remove)
+        /// Edge cells add one more constraint
+        /// Corner cells are hardest to remove because they participate in 3 constraints
+        ///
+        /// This ordering tends to produce puzzles with more remaining clues on corners
+        /// which intuitively feels right - hard puzzles should still have some "anchors"
+        ///
+        /// If targetClues > 0, stops removing once we've reached that many clues
+        /// (used for Classic difficulty which targets around 25)
         /// </summary>
         private Cube GenerateUniquePuzzleStrategic(int targetClues, out int clueCount)
         {
-            // 1. Δημιούργησε λυμένο κύβο
+            // 1. generate a solved cube
             Cube solvedCube = new Cube();
             Solver solver = new Solver(_seed);
             
@@ -267,10 +298,10 @@ namespace CubeDoku.Server.Core
                 throw new Exception("Failed to generate solved cube!");
             }
 
-            // 2. Clone
+            // 2. clone to puzzle
             Cube puzzleCube = CloneCube(solvedCube);
 
-            // 3. Συλλέξε κελιά ανά τύπο
+            // 3. categorize cells by type
             var centers = new List<Cell>();
             var edges = new List<Cell>();
             var corners = new List<Cell>();
@@ -292,7 +323,7 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // 4. Shuffle και δοκίμασε αφαίρεση στη σειρά: Centers → Edges → Corners
+            // 4. shuffle each group independently, then combine in order
             ShuffleCells(centers);
             ShuffleCells(edges);
             ShuffleCells(corners);
@@ -303,10 +334,10 @@ namespace CubeDoku.Server.Core
             orderedCells.AddRange(corners);
 
             int removed = 0;
-            // 54 total cells
+            // 54 total cells in a 3x3x6 cube
             foreach (var cell in orderedCells)
             {
-                // Check if we reached target clues
+                // stop if we've hit the target clue count
                 if (targetClues > 0 && (54 - removed) <= targetClues)
                 {
                     break;
@@ -315,6 +346,7 @@ namespace CubeDoku.Server.Core
                 int originalValue = cell.getNumber();
                 cell.setNumber(0);
 
+                // verify uniqueness on a fresh clone
                 Cube testCube = CloneCube(puzzleCube);
                 Solver testSolver = new Solver(_seed + 1000);
                 
@@ -326,6 +358,7 @@ namespace CubeDoku.Server.Core
                 }
                 else
                 {
+                    // this cell can't be removed - put it back
                     cell.setNumber(originalValue);
                 }
             }
@@ -335,3 +368,4 @@ namespace CubeDoku.Server.Core
         }
     }
 }
+

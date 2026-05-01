@@ -1,3 +1,24 @@
+// LeaderboardModal.tsx
+// Shows the daily leaderboard for Classic and BrainTerror difficulty
+//
+// Data comes from GET /api/user/leaderboard?date=YYYY-MM-DD
+// The API returns results for ALL difficulties on that date, and this component
+// filters client-side based on the selected tab. Slightly wasteful but the total
+// result set is small and it means we only make one request per modal open.
+//
+// Features:
+//   - Tab switching between Classic and BrainTerror
+//   - "You" row highlighted in a different color (identified by username match)
+//   - "pinnedEntry" prop: allows the parent to pin the player's own result at the top
+//     even if it hasn't been saved to the server yet (or if the server response is stale)
+//   - Username resolution: falls back to decoding from localStorage token if AuthContext
+//     isn't hydrated yet (can happen if leaderboard opens before auth is fully loaded)
+//
+// The username highlighting logic is a bit fragile - it relies on string matching which
+// breaks if two users have the same username. I should add proper user ID comparison
+// but the IDs aren't included in the leaderboard response right now.
+// TODO: either add userId to leaderboard entries, or accept that identical usernames won't highlight correctly
+
 import { useEffect, useState } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { jwtDecode } from 'jwt-decode';
@@ -6,6 +27,7 @@ import { useAuth } from './context/AuthContext';
 import './WelcomeModal.css';
 import './ProfileModal.css';
 
+// one row from the leaderboard API
 interface LeaderboardEntry {
     username: string;
     difficulty: string;
@@ -19,7 +41,7 @@ interface LeaderboardModalProps {
     isOpen: boolean;
     onClose: () => void;
     defaultTab?: 'Classic' | 'BrainTerror';
-    pinnedEntry?: LeaderboardEntry | null;
+    pinnedEntry?: LeaderboardEntry | null;   // player's own entry to pin at top if not in list yet
 }
 
 interface TokenClaims {
@@ -44,15 +66,16 @@ export const LeaderboardModal = ({
     const [allData, setAllData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Fallback to decode username from token if user context isn't loaded yet
+    // fallback: if user isn't loaded from AuthContext yet, try decoding from localStorage
+    // this can happen when the leaderboard is opened very quickly after page load
     const getLoggedInUsername = () => {
         if (user?.username) return user.username;
         try {
             const token = localStorage.getItem('token');
             if (token) {
                 const decoded = jwtDecode<TokenClaims>(token);
+                // ASP.NET puts the name in a long claim URI OR in unique_name
                 const claimName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
-
                 if (typeof claimName === 'string') return claimName;
                 if (typeof decoded.unique_name === 'string') return decoded.unique_name;
             }
@@ -64,14 +87,17 @@ export const LeaderboardModal = ({
 
     const loggedInUsername = getLoggedInUsername();
 
+    // sync the tab with the defaultTab prop (changes when the user selects a different difficulty in the welcome modal)
     useEffect(() => {
         setTab(defaultTab);
     }, [defaultTab, isOpen]);
 
+    // fetch leaderboard data when the modal opens
     useEffect(() => {
         if (!isOpen) return;
         setLoading(true);
         const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+        // cache: 'no-store' forces a fresh fetch each time the modal opens
         fetch(`/api/user/leaderboard?date=${today}`, { cache: 'no-store' })
             .then(r => r.ok ? r.json() : [])
             .then(data => setAllData(data))
@@ -82,7 +108,10 @@ export const LeaderboardModal = ({
     const { shouldRender, isClosing } = useModalTransition(isOpen);
     if (!shouldRender) return null;
 
+    // filter to just the current tab's difficulty
     const rows = allData.filter(e => e.difficulty === tab);
+
+    // decide whether to show the pinned entry
     const shouldPin = pinnedEntry && pinnedEntry.difficulty === tab;
     const hasPinned = shouldPin && rows.some(e =>
         e.username === pinnedEntry.username &&
@@ -92,6 +121,7 @@ export const LeaderboardModal = ({
         e.mistakes === pinnedEntry.mistakes &&
         e.hintsUsed === pinnedEntry.hintsUsed
     );
+    // if the pinned entry isn't in the loaded data yet, prepend it manually
     const displayedRows = shouldPin && !hasPinned ? [pinnedEntry, ...rows] : rows;
 
     return (
@@ -104,6 +134,7 @@ export const LeaderboardModal = ({
                     <h2>Leaderboard</h2>
                 </div>
 
+                {/* Tab bar for Classic / Brain Terror */}
                 <div className="lb-tabs">
                     <button
                         className={`lb-tab${tab === 'Classic' ? ' active' : ''}`}
@@ -155,8 +186,8 @@ export const LeaderboardModal = ({
                     </div>
                 )}
 
-
             </div>
         </div>
     );
 };
+

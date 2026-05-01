@@ -444,8 +444,8 @@ button:focus-visible {
 
 /* ─ HowTo shot slot ─ */
 :root[data-theme='light'] .howto-shot-slot {
-  background: linear-gradient(145deg, rgba(240,233,225,0.55), rgba(229,221,209,0.55));
-  border-color: rgba(108, 74, 44, 0.22);
+  background: var(--color-surface-elevated);
+  border-color: rgba(108, 74, 44, 0.18);
 }
 
 /* ─ Tab paused icon circle ─ */

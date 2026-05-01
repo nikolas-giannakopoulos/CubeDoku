@@ -481,11 +481,11 @@
 /* ── Today's personal best line under each difficulty card ─────────────── */
 .difficulty-today-best-line {
     text-align: center;
-    color: #ffffff;
+    color: var(--color-text-primary);
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.02em;
-    opacity: 0.8;
+    opacity: 0.72;
     user-select: none;
 }
 

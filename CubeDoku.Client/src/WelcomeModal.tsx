@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
+import { useTheme } from './context/ThemeContext';
 import './WelcomeModal.css';
-import classicIcon from './assets/classic.png';
-import brainterrorIcon from './assets/brainterror.png';
+import classicDark  from './assets/classic_dark.png';
+import classicLight from './assets/classic_light.png';
+import brainterrorDark  from './assets/brainterror_dark.png';
+import brainterrorLight from './assets/brainterror_light.png';
 import { FaExclamationTriangle, FaPlay } from 'react-icons/fa';
 import { MdLeaderboard } from 'react-icons/md';
 import { LuX, LuCircleHelp, LuUser, LuLogIn, LuLogOut } from 'react-icons/lu';
@@ -38,6 +41,8 @@ const formatTime = (seconds: number | undefined | null): string => {
 
 export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAuth, savedProgress, onContinue }: WelcomeModalProps) => {
     const { isLoggedIn, logout, token, user } = useAuth();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
     const [selectedDifficulty, setSelectedDifficulty] = useState<'Classic' | 'BrainTerror'>('Classic');
     const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -158,7 +163,7 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                     onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('Classic')}
                                 >
                                     <div className="difficulty-icon">
-                                        <img src={classicIcon} alt="Classic" />
+                                        <img src={isDark ? classicDark : classicLight} alt="Classic" />
                                     </div>
                                     <div className="difficulty-name">Classic</div>
                                     <div className="difficulty-desc">Standard rules. Good for beginners.</div>
@@ -188,7 +193,7 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                                     onKeyDown={(e) => e.key === 'Enter' && setSelectedDifficulty('BrainTerror')}
                                 >
                                     <div className="difficulty-icon">
-                                        <img src={brainterrorIcon} alt="Brain Terror" />
+                                        <img src={isDark ? brainterrorDark : brainterrorLight} alt="Brain Terror" />
                                     </div>
                                     <div className="difficulty-name">Brain Terror</div>
                                     <div className="difficulty-desc">Fewer clues. For truly deranged minds.</div>

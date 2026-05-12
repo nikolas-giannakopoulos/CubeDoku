@@ -33,7 +33,7 @@
     </ProjectReference>
   </ItemGroup>
 
-  <Target Name="CleanupZombieProcesses" BeforeTargets="Build;PrepareForBuild;PreBuildEvent">
+  <Target Name="CleanupZombieProcesses" BeforeTargets="Build;PrepareForBuild;PreBuildEvent" Condition="'$(OS)' == 'Windows_NT'">
     <Message Importance="high" Text="[CubeDoku] Killing any lingering backend or node processes to free ports..." />
     <Exec Command="taskkill /F /IM CubeDoku.Server.exe /FI &quot;STATUS eq RUNNING&quot; 2&gt;nul || exit 0" IgnoreExitCode="true" />
     <Exec Command="taskkill /F /IM node.exe /FI &quot;STATUS eq RUNNING&quot; 2&gt;nul || exit 0" IgnoreExitCode="true" />

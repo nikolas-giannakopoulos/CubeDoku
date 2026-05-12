@@ -23,8 +23,8 @@ using CubeDoku.Server.Models;
 
 namespace CubeDoku.Server.Controllers
 {
-    [ApiController]              
-    [Route("api/[controller]")]    
+    [ApiController]
+    [Route("api/[controller]")]
     public class GameController(IWebHostEnvironment env) : ControllerBase
     {
 
@@ -98,9 +98,8 @@ namespace CubeDoku.Server.Controllers
         }
 
         // GET /api/game/solution?difficulty=Classic|BrainTerror
-        // DEV ONLY: returns the full solved puzzle (all 54 cells)
-        // This was incredibly useful during development for debugging the frontend rendering
-        // Blocked in production - returns 404 so it doesn't exist from the outside
+        // Returns the full solved puzzle (all 54 cells) || DEV ONLY
+        // TODO: Remove on production
         [HttpGet("solution")]
         public ActionResult<List<CellDTO>> GetSolution([FromQuery] string difficulty = "Classic")
         {
@@ -115,7 +114,7 @@ namespace CubeDoku.Server.Controllers
                 return Ok(solution);
             }
         }
-        
+
         // POST /api/game/revert
         // Called when the player uses undo - re-validates the whole board after undo
         // The client already handles the undo logic, this just recomputes the error/completion states
@@ -187,17 +186,17 @@ namespace CubeDoku.Server.Controllers
         public ActionResult<MoveResponse> ValidateMove([FromBody] MoveRequest request)
         {
             try
-         
+
             {
                 // reconstruct the cube from the flat array sent by the client
                 Cube cube = new Cube();
                 int[] values = request.CurrentState;
                 int counter = 0;
-                foreach(var face in Enum.GetValues<CubeFaces>())
+                foreach (var face in Enum.GetValues<CubeFaces>())
                 {
-                    for(int row = 0; row < 3; row++)
+                    for (int row = 0; row < 3; row++)
                     {
-                        for(int column = 0; column < 3; column++)
+                        for (int column = 0; column < 3; column++)
                         {
                             var cell = cube.getCell(new CellPosition(face, row, column));
                             cell.setNumber(values[counter]);
@@ -236,9 +235,11 @@ namespace CubeDoku.Server.Controllers
                 }
 
                 // re-validate ALL other filled cells across the whole board
-                // this is needed so that CheckIfSolved can detect errors that existed before this move
-                // without this, old errors in other cells would be invisible and IsSolved would return true prematurely
-                // (had a very nasty bug here during testing because of this)
+                // this is needed so that cross-face edge/corner partners have their state
+                // correctly updated when their own IndividualChecker runs.
+                // We collect all returned cells and merge them, so nothing is silently discarded.
+                // (The old code discarded the return values here, which meant partner cells whose
+                //  Error was cleared/set by later calls never made it into the response.)
                 foreach (var face in Enum.GetValues<CubeFaces>())
                 {
                     for (int row = 0; row < 3; row++)
@@ -248,7 +249,12 @@ namespace CubeDoku.Server.Controllers
                             var cell = cube.getCell(new CellPosition(face, row, column));
                             if (cell.getNumber() != 0 && cell != newCell)
                             {
-                                checker.IndividualChecker(cell, cube);
+                                var partialUpdates = checker.IndividualChecker(cell, cube);
+                                foreach (var updated in partialUpdates)
+                                {
+                                    if (!updatedCells.Contains(updated))
+                                        updatedCells.Add(updated);
+                                }
                             }
                         }
                     }
@@ -257,7 +263,7 @@ namespace CubeDoku.Server.Controllers
                 var response = ConvertToMoveResponse(updatedCells, cube);
                 return Ok(response);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, $"Error: {ex.Message}");
             }
@@ -343,7 +349,7 @@ namespace CubeDoku.Server.Controllers
                     {
                         for (int column = 0; column < 3; column++)
                         {
-                            currentCube.getCell(new CellPosition(face, row, column)).setNumber(request.CurrentState[idx]);      
+                            currentCube.getCell(new CellPosition(face, row, column)).setNumber(request.CurrentState[idx]);
                             idx++;
                         }
                     }
@@ -420,23 +426,23 @@ namespace CubeDoku.Server.Controllers
         {
             return ((int)face * 9) + (row * 3) + column;
         }
-        
+
         // converts the puzzle cube (with only clue cells non-zero) to the StartResponse format
         // locked cells = cells with values from the generator (player can't change these)
         private StartResponse ConvertToStartResponse(Cube cube, string difficulty, List<LogicalStep> steps)
         {
             var lockedCells = new List<CellDTO>();
 
-            foreach(var face in Enum.GetValues<CubeFaces>())
+            foreach (var face in Enum.GetValues<CubeFaces>())
             {
-                for(int row = 0; row < 3; row++)
+                for (int row = 0; row < 3; row++)
                 {
-                    for(int column = 0; column < 3; column++)
+                    for (int column = 0; column < 3; column++)
                     {
                         var tempPosition = new CellPosition(face, row, column);
                         var tempCell = cube.getCell(tempPosition);
                         // only include cells that have a value (non-zero = is a clue)
-                        if(tempCell.getNumber() != 0)
+                        if (tempCell.getNumber() != 0)
                         {
                             var lockedCell = new CellDTO
                             {
@@ -496,7 +502,7 @@ namespace CubeDoku.Server.Controllers
         {
             var updatedCells = new List<CellUpdateDTO>();
 
-            foreach(var cell in list)
+            foreach (var cell in list)
             {
                 var cellDTO = new CellUpdateDTO
                 {
@@ -520,14 +526,14 @@ namespace CubeDoku.Server.Controllers
         // puzzle is solved when ALL 54 cells have a non-zero value AND none are in Error state
         private bool CheckIfSolved(Cube cube)
         {
-            foreach(var face in Enum.GetValues<CubeFaces>())
+            foreach (var face in Enum.GetValues<CubeFaces>())
             {
-                for(int row = 0; row < 3; row++)
+                for (int row = 0; row < 3; row++)
                 {
-                    for(int column = 0; column < 3; column++)
+                    for (int column = 0; column < 3; column++)
                     {
                         var tempCell = cube.getCell(new CellPosition(face, row, column));
-                        if(tempCell.getNumber() == 0 || tempCell.getColor() == CellState.Error)
+                        if (tempCell.getNumber() == 0 || tempCell.getColor() == CellState.Error)
                         {
                             return false;
                         }

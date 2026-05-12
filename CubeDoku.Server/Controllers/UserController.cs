@@ -208,43 +208,73 @@ public class UserController(ApplicationDbContext db) : ControllerBase
     }
 
     // POST /api/user/complete
-    // Called when an authenticated player finishes a puzzle
-    // Saves the result and returns their leaderboard position
+    // Called when an authenticated player finishes a puzzle.
+    // Players can retry the same puzzle to improve their score.
     //
-    // Rate limited: 5 per user per hour - prevents bulk score submission abuse
-    // Also has a server-side duplicate check: same user can't submit twice for same puzzle+difficulty
+    // Upsert logic:
+    //   - If no prior result exists → insert a new record.
+    //   - If a prior result exists AND the new score is strictly better
+    //     (higher score, or equal score with a faster time) → overwrite it.
+    //   - Otherwise → return the existing best result unchanged.
+    //     The client can show a "Your previous best is still your highest" message.
+    //
+    // Rate limited per user to prevent rapid-fire spam submissions.
     [HttpPost("complete")]
     [Authorize]
     [EnableRateLimiting("CompletionPolicy")]
     public async Task<IActionResult> CompleteGame([FromBody] CompleteGameRequest req)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId   = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var username = User.FindFirstValue(ClaimTypes.Name) ?? "You";
 
-        // idempotency check: reject if this user already submitted for this puzzle+difficulty
-        // the client has a useRef guard too, but this is the real enforcement
-        var alreadySubmitted = await db.GameResults.AnyAsync(r =>
-            r.UserId    == userId &&
+        // clamp incoming values to sane ranges
+        // (basic anti-cheat: doesn't stop determined attackers but filters obvious tampering)
+        var newScore    = Math.Clamp(req.Score, 0, 10_000);
+        var newDuration = Math.Max(0, req.DurationSeconds);
+        var newMistakes = Math.Max(0, req.Mistakes);
+        var newHints    = Math.Max(0, req.HintsUsed);
+
+        var existing = await db.GameResults.FirstOrDefaultAsync(r =>
+            r.UserId     == userId &&
             r.Difficulty == req.Difficulty &&
             r.PuzzleDate == req.PuzzleDate);
 
-        if (alreadySubmitted)
-            return Conflict("You have already submitted a result for this puzzle.");
+        GameResult result;
 
-        // clamp values to sane ranges in case the client sends something unreasonable
-        // (basic anti-cheat: doesn't stop determined attackers but filters obvious tampering)
-        var result = new GameResult
+        if (existing == null)
         {
-            UserId          = userId,
-            Difficulty      = req.Difficulty,
-            PuzzleDate      = req.PuzzleDate,
-            DurationSeconds = Math.Max(0, req.DurationSeconds),
-            Mistakes        = Math.Max(0, req.Mistakes),
-            Score           = Math.Clamp(req.Score, 0, 10_000),
-            HintsUsed       = Math.Max(0, req.HintsUsed)
-        };
+            // first submission for this puzzle - insert a fresh record
+            result = new GameResult
+            {
+                UserId          = userId,
+                Difficulty      = req.Difficulty,
+                PuzzleDate      = req.PuzzleDate,
+                DurationSeconds = newDuration,
+                Mistakes        = newMistakes,
+                Score           = newScore,
+                HintsUsed       = newHints
+            };
+            db.GameResults.Add(result);
+        }
+        else
+        {
+            // player is retrying - only overwrite if this attempt is genuinely better:
+            // higher score wins; on a tie, the faster time wins
+            bool isBetter = newScore > existing.Score ||
+                            (newScore == existing.Score && newDuration < existing.DurationSeconds);
 
-        db.GameResults.Add(result);
+            if (isBetter)
+            {
+                existing.Score           = newScore;
+                existing.DurationSeconds = newDuration;
+                existing.Mistakes        = newMistakes;
+                existing.HintsUsed       = newHints;
+                existing.CompletedAt     = DateTime.UtcNow;
+            }
+
+            result = existing;
+        }
+
         await db.SaveChangesAsync();
 
         var leaderboardRows = await GetPuzzleLeaderboardRows(req.Difficulty, req.PuzzleDate);
@@ -252,14 +282,14 @@ public class UserController(ApplicationDbContext db) : ControllerBase
 
         return Ok(new
         {
-            Username = username,
-            Score = result.Score,
-            Rank = ranked.Rank,
-            StartRank = ranked.StartRank,
+            Username     = username,
+            Score        = result.Score,
+            Rank         = ranked.Rank,
+            StartRank    = ranked.StartRank,
             TotalPlayers = ranked.TotalPlayers,
-            NearbyRows = ranked.NearbyRows,
-            Difficulty = req.Difficulty,
-            PuzzleDate = req.PuzzleDate
+            NearbyRows   = ranked.NearbyRows,
+            Difficulty   = req.Difficulty,
+            PuzzleDate   = req.PuzzleDate
         });
     }
 

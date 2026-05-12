@@ -906,12 +906,32 @@ function CubeViewer() {
     }, []);
 
     // --- Load saved progress on mount so the welcome modal can show continue buttons ---
+    // We only show Continue buttons for saves that belong to *today's* puzzle.
+    // If the date doesn't match (i.e. the daily puzzle has changed), the save is stale
+    // and we clear it from localStorage so it doesn't linger indefinitely.
     useEffect(() => {
-        const classic = loadProgress('Classic');
-        const brainTerror = loadProgress('BrainTerror');
+        const today = new Date().toISOString().split('T')[0];
         const next: Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>> = {};
-        if (classic) next['Classic'] = classic;
-        if (brainTerror) next['BrainTerror'] = brainTerror;
+
+        const classic = loadProgress('Classic');
+        if (classic) {
+            if (classic.puzzleDate === today) {
+                next['Classic'] = classic;
+            } else {
+                // Stale save from a previous day — discard it
+                clearProgress('Classic');
+            }
+        }
+
+        const brainTerror = loadProgress('BrainTerror');
+        if (brainTerror) {
+            if (brainTerror.puzzleDate === today) {
+                next['BrainTerror'] = brainTerror;
+            } else {
+                clearProgress('BrainTerror');
+            }
+        }
+
         setSavedProgress(next);
     }, []);
 
@@ -919,14 +939,16 @@ function CubeViewer() {
     // The 'storage' event fires in ALL OTHER tabs whenever localStorage changes.
     // This ensures the welcome-modal continue buttons always show the canonical
     // (latest winning-tab) timer, even across multiple open tabs.
+    // Same date-guard as above: only include saves that belong to today's puzzle.
     useEffect(() => {
         const handleStorage = (e: StorageEvent) => {
             if (!e.key?.startsWith('cubedoku_progress_')) return;
-            const classic = loadProgress('Classic');
-            const brainTerror = loadProgress('BrainTerror');
+            const today = new Date().toISOString().split('T')[0];
             const next: Partial<Record<'Classic' | 'BrainTerror', PersistedGameState>> = {};
-            if (classic) next['Classic'] = classic;
-            if (brainTerror) next['BrainTerror'] = brainTerror;
+            const classic = loadProgress('Classic');
+            if (classic && classic.puzzleDate === today) next['Classic'] = classic;
+            const brainTerror = loadProgress('BrainTerror');
+            if (brainTerror && brainTerror.puzzleDate === today) next['BrainTerror'] = brainTerror;
             setSavedProgress(next);
         };
         window.addEventListener('storage', handleStorage);

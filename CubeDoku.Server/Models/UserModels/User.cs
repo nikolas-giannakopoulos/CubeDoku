@@ -16,20 +16,20 @@ namespace CubeDoku.Server.Models.UserModels;
 
 public class User
 {
-    // Guid is overkill for a project this size but it's safer than auto-increment int
+    // Guid because it's safer than auto-increment int
     // (can't guess other users' IDs by incrementing)
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public string Username { get; set; } = string.Empty;
-    
+
     public string Email { get; set; } = string.Empty;
-    
+
     // null means Google-only account (no password)
     public string? PasswordHash { get; set; }
-    
+
     // null means email/password account
     public string? GoogleID { get; set; }
-    
+
     // automatically set to now when the record is created
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

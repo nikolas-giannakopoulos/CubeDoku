@@ -18,7 +18,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<User> Users => Set<User>();
 
     // GameResults table - one row per completed puzzle per user
-    // (the unique constraint on UserId+Difficulty+PuzzleDate is enforced in the controller)
     public DbSet<GameResult> GameResults => Set<GameResult>();
 }
 

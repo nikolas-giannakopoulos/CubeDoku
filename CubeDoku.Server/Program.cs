@@ -110,14 +110,25 @@ builder.Services.AddRateLimiter(rateLimiter =>
         opt.QueueLimit          = 2;
     });
 
-    // game completion: 5 submissions per user per hour
-    // (you can't complete more than 2 puzzles per day in practice, this is generous)
-    rateLimiter.AddFixedWindowLimiter("CompletionPolicy", opt =>
+    // game completion: keyed per authenticated user (not IP) so dev test loops
+    // don't exhaust the bucket for a real player completing their daily puzzle.
+    // 3 permits per 10-minute window is still far more than any legitimate player
+    // needs (max 2 completions per day) while preventing rapid bulk submission.
+    rateLimiter.AddPolicy("CompletionPolicy", context =>
     {
-        opt.PermitLimit         = 5;
-        opt.Window              = TimeSpan.FromHours(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit          = 0;
+        // use the authenticated user's ID as the partition key;
+        // fall back to IP so unauthenticated callers are also limited
+        var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? context.Connection.RemoteIpAddress?.ToString()
+                     ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit          = 3,
+            Window               = TimeSpan.FromMinutes(10),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit           = 1
+        });
     });
 
     // global fallback: 120 requests per IP per minute across all other endpoints

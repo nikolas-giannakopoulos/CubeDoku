@@ -199,52 +199,126 @@ namespace CubeDoku.Server.Core
             }
 
             // ========== 4. UPDATE COLORS BASED ON ACCUMULATED VIOLATIONS ==========
-            // collect all cells that might need a color update
-            HashSet<Cell> cellsToCheck = new HashSet<Cell>();
-            
-            cellsToCheck.UnionWith(faceCells);
-            
-            // add the edge/corner partners too
+            //
+            // IMPORTANT: we split cells into two sets:
+            //   - faceCells: all on the same face as the moved cell - we fully own their state here
+            //     (face constraint is the only cross-cell constraint within a single face, and
+            //      we just evaluated it above, so we can both set AND clear errors for these)
+            //   - partnerCells: cross-face edge/corner partners - we only evaluated their
+            //     sum constraint in this call, NOT their own face constraint or other sum pairs.
+            //     Therefore we can only GRANT Error here; clearing their Error must be done by
+            //     their own IndividualChecker call, or we risk wiping a valid violation that
+            //     belongs to a different constraint group on a different face.
+            //
+            // Without this split, calling IndividualChecker on any face cell would incorrectly
+            // reset cross-face partners (that happen to be in faceCells' cellsToCheck) to
+            // Default, stripping their error highlight even though the edge/corner sum is still wrong.
+
+            // Collect cross-face partners (if any) into a separate set
+            HashSet<Cell> partnerCells = new HashSet<Cell>();
             if ((row + col) % 2 != 0)
             {
                 var pairedPos = GetPairedCells(cellPos);
                 if (pairedPos != null && pairedPos.Length == 1)
-                {
-                    cellsToCheck.Add(cell);
-                    cellsToCheck.Add(cube.getCell(pairedPos[0]));
-                }
+                    partnerCells.Add(cube.getCell(pairedPos[0]));
             }
             else if (!(row == 1 && col == 1))
             {
                 var pairedPos = GetPairedCells(cellPos);
                 if (pairedPos != null && pairedPos.Length == 2)
                 {
-                    cellsToCheck.Add(cell);
-                    cellsToCheck.Add(cube.getCell(pairedPos[0]));
-                    cellsToCheck.Add(cube.getCell(pairedPos[1]));
+                    partnerCells.Add(cube.getCell(pairedPos[0]));
+                    partnerCells.Add(cube.getCell(pairedPos[1]));
                 }
             }
 
-            // now set the actual color for each cell based on whether it has violations
-            foreach (var cellToCheck in cellsToCheck)
+            // Process same-face cells: can both set AND clear Error
+            foreach (var faceCell in faceCells)
             {
-                bool hasViolations = cellViolations.ContainsKey(cellToCheck) && cellViolations[cellToCheck].Count > 0;
-                CellState currentState = cellToCheck.getColor();
-                
+                bool hasViolations = cellViolations.ContainsKey(faceCell) && cellViolations[faceCell].Count > 0;
+                CellState currentState = faceCell.getColor();
+
                 if (hasViolations && currentState != CellState.Error)
                 {
-                    cellToCheck.setColor(CellState.Error);
-                    updatedCells.Add(cellToCheck);
+                    faceCell.setColor(CellState.Error);
+                    updatedCells.Add(faceCell);
                 }
                 else if (!hasViolations && currentState == CellState.Error)
                 {
-                    // was in error state but violation is gone now (maybe they placed a correcting number)
-                    cellToCheck.setColor(CellState.Default);
-                    updatedCells.Add(cellToCheck);
+                    // Safe to clear only if:
+                    //   (a) this cell is not a cross-face partner of the current cell (already
+                    //       handled in the partner-cell loop below), AND
+                    //   (b) this cell has no *active* edge/corner sum violation of its own.
+                    //
+                    // Without guard (b), calling IndividualChecker for any cell on the partner's
+                    // face would include the partner in faceCells, find no face violation on it,
+                    // and clear its Error even though the edge/corner sum is still broken.
+                    if (!partnerCells.Contains(faceCell) && !HasSumConstraintViolation(faceCell, cube))
+                    {
+                        faceCell.setColor(CellState.Default);
+                        updatedCells.Add(faceCell);
+                    }
+                    // if it IS a partner cell the else-if below will handle it correctly
                 }
             }
 
+            // Process cross-face partners: only GRANT Error, never clear it
+            // (clearing is handled by their own IndividualChecker call)
+            foreach (var partnerCell in partnerCells)
+            {
+                bool hasViolations = cellViolations.ContainsKey(partnerCell) && cellViolations[partnerCell].Count > 0;
+                CellState currentState = partnerCell.getColor();
+
+                if (hasViolations && currentState != CellState.Error)
+                {
+                    partnerCell.setColor(CellState.Error);
+                    updatedCells.Add(partnerCell);
+                }
+                // NOTE: we intentionally do NOT clear Error here for partner cells.
+                // If the violation is gone, the partner's own IndividualChecker call
+                // (in the board-wide scan in GameController) will clear it.
+            }
+
             return updatedCells;
+        }
+
+        // Checks whether a given cell currently violates its own edge or corner sum constraint.
+        // Used to guard against incorrectly clearing Error on a face cell whose error came from
+        // a different IndividualChecker invocation (i.e. from a cross-face sum, not a face duplicate).
+        // Returns false for center cells (they have no sum constraint).
+        private bool HasSumConstraintViolation(Cell cell, Cube cube)
+        {
+            CellPosition pos = cell.getPosition();
+            int r = pos.row;
+            int c = pos.column;
+
+            // center cells have no edge/corner constraint
+            if (r == 1 && c == 1) return false;
+
+            if ((r + c) % 2 != 0)
+            {
+                // edge cell - check its one partner
+                CellPosition[] pairedPos = GetPairedCells(pos);
+                if (pairedPos == null || pairedPos.Length != 1) return false;
+                Cell partner = cube.getCell(pairedPos[0]);
+                int v1 = cell.getNumber();
+                int v2 = partner.getNumber();
+                if (v1 != 0 && v2 != 0 && v1 + v2 != 12) return true;
+            }
+            else
+            {
+                // corner cell - check its two partners
+                CellPosition[] pairedPos = GetPairedCells(pos);
+                if (pairedPos == null || pairedPos.Length != 2) return false;
+                Cell partner1 = cube.getCell(pairedPos[0]);
+                Cell partner2 = cube.getCell(pairedPos[1]);
+                int v1 = cell.getNumber();
+                int v2 = partner1.getNumber();
+                int v3 = partner2.getNumber();
+                if (v1 != 0 && v2 != 0 && v3 != 0 && v1 + v2 + v3 != 12) return true;
+            }
+
+            return false;
         }
 
         // add a violation type string to a cell's violation list

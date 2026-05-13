@@ -5,6 +5,13 @@ WORKDIR /app
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+# Install Node.js because the JavaScript.Sdk requires it to build the .esproj
+RUN apt-get update -yq \
+    && apt-get install -yq curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -yq nodejs
+
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 

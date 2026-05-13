@@ -1054,6 +1054,7 @@ function CubeViewer() {
         return result;
     };
 
+    /*
     const _startGameFromServer = async (difficulty: 'Classic' | 'BrainTerror') => {
         try {
             const headers: Record<string, string> = {};
@@ -1072,6 +1073,8 @@ function CubeViewer() {
             console.error('Error starting game:', error);
         }
     };
+    */
+;
 
     const saveCompletionSummary = async (summary: CompletionSummary) => {
         if (isSavingResultRef.current) return;

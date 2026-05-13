@@ -1054,7 +1054,7 @@ function CubeViewer() {
         return result;
     };
 
-    const startGameFromServer = async (difficulty: 'Classic' | 'BrainTerror') => {
+    const _startGameFromServer = async (difficulty: 'Classic' | 'BrainTerror') => {
         try {
             const headers: Record<string, string> = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -2211,7 +2211,8 @@ function CubeViewer() {
                             difficulty: completionSummary.difficulty,
                             score: completionSummary.score,
                             durationSeconds: completionSummary.durationSeconds,
-                            mistakes: completionSummary.mistakes
+                            mistakes: completionSummary.mistakes,
+                            hintsUsed: completionSummary.hintsUsed
                         }
                         : null
                 }

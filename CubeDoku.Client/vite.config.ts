@@ -7,6 +7,10 @@ import path from 'path';
 import child_process from 'child_process';
 import { env } from 'process';
 
+// During a production build (Vercel, Docker, CI) there is no dotnet available,
+// so we skip certificate generation entirely. HTTPS is only needed locally.
+const isDev = env.NODE_ENV !== 'production';
+
 const baseFolder =
     env.APPDATA !== undefined && env.APPDATA !== ''
         ? `${env.APPDATA}/ASP.NET/https`
@@ -16,21 +20,23 @@ const certificateName = "cubedoku.client";
 const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
 const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
-if (!fs.existsSync(baseFolder)) {
-    fs.mkdirSync(baseFolder, { recursive: true });
-}
+if (isDev) {
+    if (!fs.existsSync(baseFolder)) {
+        fs.mkdirSync(baseFolder, { recursive: true });
+    }
 
-if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
-    if (0 !== child_process.spawnSync('dotnet', [
-        'dev-certs',
-        'https',
-        '--export-path',
-        certFilePath,
-        '--format',
-        'Pem',
-        '--no-password',
-    ], { stdio: 'inherit', }).status) {
-        throw new Error("Could not create certificate.");
+    if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
+        if (0 !== child_process.spawnSync('dotnet', [
+            'dev-certs',
+            'https',
+            '--export-path',
+            certFilePath,
+            '--format',
+            'Pem',
+            '--no-password',
+        ], { stdio: 'inherit', }).status) {
+            throw new Error("Could not create certificate.");
+        }
     }
 }
 
@@ -43,8 +49,6 @@ const target = env.ASPNETCORE_URLS
         ? `https://127.0.0.1:${env.ASPNETCORE_HTTPS_PORT}`
         : 'http://127.0.0.1:5053';
 
-console.log(`Vite Proxy Target: ${target}`);
-
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [plugin()],
@@ -53,7 +57,7 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-    server: {
+    server: isDev ? {
         host: 'localhost',
         proxy: {
             '^/weatherforecast': {
@@ -77,5 +81,5 @@ export default defineConfig({
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),
         }
-    }
+    } : {}
 })

@@ -87,7 +87,8 @@ builder.Services.AddCors(options =>
                 "https://localhost:5173",         // Vite dev proxy
                 "https://localhost:7055",         // ASP.NET HTTPS dev port
                 "https://cubedoku.com",           // production domain
-                "https://www.cubedoku.com")
+                "https://www.cubedoku.com",
+                "https://cube-doku.vercel.app")   // Vercel deployment
             .AllowAnyMethod()
             .WithHeaders("Authorization", "Content-Type", "Accept")
             .AllowCredentials();

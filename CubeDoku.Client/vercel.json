@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR_KOYEB_APP_URL/api/:path*"
+      "destination": "https://cubedoku-server.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

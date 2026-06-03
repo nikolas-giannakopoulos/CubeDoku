@@ -1,22 +1,5 @@
-// Checkers.cs
 // This is the heart of the game logic - it validates whether a cell placement is legal
 // and updates the visual states (Default/Error/Completed) for affected cells.
-//
-// There are two main entry points:
-//   1. Checker() - static, fast, just returns true/false - used by the solver
-//   2. IndividualChecker() - instance, returns a list of cells whose color changed - used by the API
-//
-// The distinction matters because the solver calls Checker millions of times and doesn't
-// care about visual state. The API uses IndividualChecker so we only send changed cells
-// back to the client (saves bandwidth)
-//
-// The three constraint types this validates:
-//   1. Face Rule: no duplicate numbers on a face (standard Sudoku)
-//   2. Edge Rule: two cells sharing a physical cube edge must sum to 12
-//   3. Corner Rule: three cells at a corner must sum to 12
-//
-// NOTE: center cells (row=1, col=1) only have the face constraint. Edges and corners
-// are identified by position parity - see the getCellType() comments in CellPosition.cs
 
 using System;
 using System.Collections.Generic;
@@ -27,10 +10,6 @@ namespace CubeDoku.Server.Core
     public class Checkers
     {
 
-        // helper for traversal - not actually used in final validation logic
-        // I wrote this when experimenting with a different approach to checking the whole board
-        // at once but ended up not needing it. keeping it for now because I might need it later
-        // for the "check entire board" endpoint
         private Cell GetNextCell(Cube cube, Cell cell)
         {
             CellPosition position = cell.getPosition();
@@ -52,13 +31,6 @@ namespace CubeDoku.Server.Core
 
         // IndividualChecker is called every time the player places a number
         // It figures out which cells changed state and returns only those
-        // (so the client doesn't have to redraw the entire board on every move)
-        //
-        // This method is a bit long but I couldn't figure out a clean way to split it
-        // without passing around too many variables. The logic is:
-        //   1. Validate face rule → if violated, mark all face cells as Error
-        //   2. Validate edge/corner rule → if violated, mark edge/corner cells as Error
-        //   3. Update CellState for each affected cell based on violations
         public List<Cell> IndividualChecker(Cell cell, Cube cube)
         {
             List<Cell> updatedCells = new List<Cell>();
@@ -66,20 +38,15 @@ namespace CubeDoku.Server.Core
             int row = cellPos.row;
             int col = cellPos.column;
 
-            // accumulate violations per cell so we can decide final state at the end
-            // using a string key like "face", "edge", "corner" to track what went wrong
             Dictionary<Cell, List<string>> cellViolations = new Dictionary<Cell, List<string>>();
 
-            // ========== 1. FACE VALIDATION ==========
             var faceCells = GetFaceCells(cube, cellPos.face);
             bool faceValid = CheckFace(cube, cell);
             bool faceComplete = IsFaceComplete(faceCells);
 
             if (!faceValid)
             {
-                // mark all face cells as having a face violation
-                // this is maybe a bit aggressive (marking ALL cells) but it matches
-                // what I see in commercial Sudoku apps - they highlight the whole row/col
+                // mark all face cells as having a face violatio
                 foreach (var faceCell in faceCells)
                 {
                     AddViolation(cellViolations, faceCell, "face");
@@ -98,7 +65,6 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // ========== 2. EDGE VALIDATION (only if this is an edge cell) ==========
             // edge cells have row+col being odd (one is 0 or 2, the other is 1)
             if ((row + col) % 2 != 0)
             {
@@ -143,7 +109,6 @@ namespace CubeDoku.Server.Core
                     }
                 }
             }
-            // ========== 3. CORNER VALIDATION (only if this is a corner cell) ==========
             // corner cells have even row+col and are NOT the center (1,1)
             else if (!(row == 1 && col == 1))
             {
@@ -152,7 +117,7 @@ namespace CubeDoku.Server.Core
                 {
                     Cell pairedCell1 = cube.getCell(pairedPositions[0]);
                     Cell pairedCell2 = cube.getCell(pairedPositions[1]);
-                    
+
                     int val1 = cell.getNumber();
                     int val2 = pairedCell1.getNumber();
                     int val3 = pairedCell2.getNumber();
@@ -198,23 +163,6 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // ========== 4. UPDATE COLORS BASED ON ACCUMULATED VIOLATIONS ==========
-            //
-            // IMPORTANT: we split cells into two sets:
-            //   - faceCells: all on the same face as the moved cell - we fully own their state here
-            //     (face constraint is the only cross-cell constraint within a single face, and
-            //      we just evaluated it above, so we can both set AND clear errors for these)
-            //   - partnerCells: cross-face edge/corner partners - we only evaluated their
-            //     sum constraint in this call, NOT their own face constraint or other sum pairs.
-            //     Therefore we can only GRANT Error here; clearing their Error must be done by
-            //     their own IndividualChecker call, or we risk wiping a valid violation that
-            //     belongs to a different constraint group on a different face.
-            //
-            // Without this split, calling IndividualChecker on any face cell would incorrectly
-            // reset cross-face partners (that happen to be in faceCells' cellsToCheck) to
-            // Default, stripping their error highlight even though the edge/corner sum is still wrong.
-
-            // Collect cross-face partners (if any) into a separate set
             HashSet<Cell> partnerCells = new HashSet<Cell>();
             if ((row + col) % 2 != 0)
             {
@@ -245,25 +193,14 @@ namespace CubeDoku.Server.Core
                 }
                 else if (!hasViolations && currentState == CellState.Error)
                 {
-                    // Safe to clear only if:
-                    //   (a) this cell is not a cross-face partner of the current cell (already
-                    //       handled in the partner-cell loop below), AND
-                    //   (b) this cell has no *active* edge/corner sum violation of its own.
-                    //
-                    // Without guard (b), calling IndividualChecker for any cell on the partner's
-                    // face would include the partner in faceCells, find no face violation on it,
-                    // and clear its Error even though the edge/corner sum is still broken.
                     if (!partnerCells.Contains(faceCell) && !HasSumConstraintViolation(faceCell, cube))
                     {
                         faceCell.setColor(CellState.Default);
                         updatedCells.Add(faceCell);
                     }
-                    // if it IS a partner cell the else-if below will handle it correctly
                 }
             }
 
-            // Process cross-face partners: only GRANT Error, never clear it
-            // (clearing is handled by their own IndividualChecker call)
             foreach (var partnerCell in partnerCells)
             {
                 bool hasViolations = cellViolations.ContainsKey(partnerCell) && cellViolations[partnerCell].Count > 0;
@@ -274,18 +211,11 @@ namespace CubeDoku.Server.Core
                     partnerCell.setColor(CellState.Error);
                     updatedCells.Add(partnerCell);
                 }
-                // NOTE: we intentionally do NOT clear Error here for partner cells.
-                // If the violation is gone, the partner's own IndividualChecker call
-                // (in the board-wide scan in GameController) will clear it.
             }
 
             return updatedCells;
         }
 
-        // Checks whether a given cell currently violates its own edge or corner sum constraint.
-        // Used to guard against incorrectly clearing Error on a face cell whose error came from
-        // a different IndividualChecker invocation (i.e. from a cross-face sum, not a face duplicate).
-        // Returns false for center cells (they have no sum constraint).
         private bool HasSumConstraintViolation(Cell cell, Cube cube)
         {
             CellPosition pos = cell.getPosition();
@@ -362,9 +292,6 @@ namespace CubeDoku.Server.Core
             return true;
         }
 
-        // ------- Static methods used by the Solver (just need true/false, no visual state) -------
-
-        // top-level static validation: checks face, then edge/corner depending on position
         public static bool Checker(Cell cell, Cube cube)
         {
             // 1. Face constraint (no duplicates on this face)
@@ -377,8 +304,6 @@ namespace CubeDoku.Server.Core
             if (r == 1 && c == 1) return true;
 
             // odd sum = edge position, even sum = corner position
-            // this is the same logic as getCellType() in CellPosition - maybe I should unify these
-            // but it works so I'm leaving it for now
             if ((r + c) % 2 != 0)
             {
                 return CheckEdges(cube);
@@ -423,8 +348,6 @@ namespace CubeDoku.Server.Core
                 }
             }
 
-            // this should never happen if the topology table is complete
-            // but I added this as a safety net - got a null ref here once during testing
             return null;
         }
 
@@ -434,8 +357,6 @@ namespace CubeDoku.Server.Core
         }
 
         // checks ALL edge pairs in the cube - used when we know we're on an edge cell
-        // also checks whether the edge could potentially be satisfied even if one side is empty
-        // (i.e. pre-emptively rejects placements where the required partner value is impossible)
         public static bool CheckEdges(Cube cube)
         {
             foreach (var edgePair in CubeTopology.Edges)
@@ -514,7 +435,7 @@ namespace CubeDoku.Server.Core
             var currentFace = cell.getPosition().face;
             var currentNumber = cell.getNumber();
 
-            if(currentNumber == 0) return true;
+            if (currentNumber == 0) return true;
 
             for (int i = 0; i < 3; i++)
             {
@@ -531,8 +452,6 @@ namespace CubeDoku.Server.Core
             return true;
         }
 
-        // helper: is a specific number already placed somewhere on a face?
-        // used in lookahead validation to reject moves that would make future moves impossible
         private static bool IsNumberUsedInFace(Cube cube, CubeFaces face, int numberToCheck)
         {
             for (int r = 0; r < 3; r++)

@@ -1,30 +1,17 @@
-// Solver.cs
 // Backtracking solver with MRV (Minimum Remaining Values) heuristic
-// This is used in two places:
-//   1. Generating a solved cube from scratch (called by PuzzleGenerator)
-//   2. Counting solutions - to verify a puzzle has a UNIQUE solution
-//
-// The MRV heuristic means we always pick the cell with the fewest valid options to try next
-// This dramatically reduces the search space compared to just going left-to-right
-// I learned about MRV from the constraint satisfaction problem literature - the slides from
-// my AI course last year actually had exactly this algorithm
-//
-// For randomized generation we shuffle the numbers 1-9 before trying them (Fisher-Yates)
-// so we get a different solution each time based on the seed. For uniqueness checking
-// we go in order 1-9 for consistency.
 
 namespace CubeDoku.Server.Core
 {
-    public class Solver{
-
-        // public so the generator can print how many iterations it took - useful for debugging
+    public class Solver
+    {
         public long Iterations = 0;
         private Random _random;
 
-        public Solver(int seed){
+        public Solver(int seed)
+        {
             _random = new Random(seed);
         }
-        
+
         // main solve method - recursive backtracking with MRV
         // returns true if a solution was found, false if no solution exists
         public bool run(Cube cube)
@@ -79,12 +66,11 @@ namespace CubeDoku.Server.Core
         }
 
         // MRV heuristic: pick the empty cell with the fewest valid options
-        // if a cell has 0 options we pick it immediately to trigger fast failure (fail-first)
-        // this is the key optimization - without it, the solver is way too slow for the puzzle generator
+        // if a cell has 0 options we pick it immediately to trigger fast failure
         private Cell GetBestCell(Cube cube)
         {
             Cell bestCell = null;
-            int minOptions = 100; // start high - any real count will be less than this
+            int minOptions = 100;
 
             foreach (var face in Enum.GetValues<CubeFaces>())
             {
@@ -99,7 +85,7 @@ namespace CubeDoku.Server.Core
 
                         int validOptionsForThisCell = CountValidMoves(cube, cell);
 
-                        // 0 options = dead end - pick this immediately to fail fast
+                        // 0 options = dead end, pick this immediately to fail fast
                         if (validOptionsForThisCell == 0) return cell;
 
                         if (validOptionsForThisCell < minOptions)

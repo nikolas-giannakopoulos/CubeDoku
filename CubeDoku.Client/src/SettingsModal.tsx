@@ -24,7 +24,7 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
     const [activeTab, setActiveTab] = useState<Tab>('game');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // --- Volume ---
+    // Volume
     const [volume, setVolume] = useState<number>(() => {
         const stored = localStorage.getItem('sfx_volume');
         return stored !== null ? parseFloat(stored) : 1;
@@ -32,7 +32,7 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
     const [prevVolume, setPrevVolume] = useState<number>(1);
     const isMuted = volume === 0;
 
-    // --- User settings ---
+    // User settings
     const [usernameInput, setUsernameInput] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [verifyPassword, setVerifyPassword] = useState('');
@@ -101,7 +101,7 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
         }
     };
 
-    // --- User settings logic ---
+    // User settings logic 
     const hasUsernameChange = useMemo(() => {
         const next = usernameInput.trim();
         return next.length > 0 && next !== currentUsername;
@@ -237,7 +237,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
     return (
         <div className={`profile-stats-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
             <div className={`modal-content settings-modal-content${isClosing ? ' modal-panel-exit' : ' modal-panel-enter'}`} onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
                 <div className="modal-header">
                     <button className="modal-back-btn" onClick={onClose} aria-label="Close settings">
                         <LuX size={20} />
@@ -245,7 +244,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                     <h3>Settings</h3>
                 </div>
 
-                {/* Tabs */}
                 <div className="settings-tabs">
                     <button
                         className={`settings-tab${activeTab === 'game' ? ' active' : ''}`}
@@ -261,10 +259,8 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                     </button>
                 </div>
 
-                {/* === GAME SETTINGS === */}
                 {activeTab === 'game' && (
                     <div className="settings-form">
-                        {/* Theme */}
                         <div className="settings-theme-block">
                             <label className="settings-label">Theme</label>
                             <div className="settings-theme-row" role="group" aria-label="Theme selection">
@@ -285,7 +281,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                             </div>
                         </div>
 
-                        {/* Volume */}
                         <div className="settings-volume-block">
                             <label className="settings-label">Sound Effects</label>
                             <div className="settings-volume-row">
@@ -313,7 +308,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                             </div>
                         </div>
 
-                        {/* Logout footer */}
                         {isLoggedIn && (
                             <>
                                 <div className="settings-footer-divider" />
@@ -325,7 +319,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                     </div>
                 )}
 
-                {/* === USER SETTINGS === */}
                 {activeTab === 'user' && (
                     <div className="settings-form">
                         {isLoggedIn ? (
@@ -383,7 +376,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                 )}
             </div>
 
-            {/* Verify identity popup */}
             {showVerifyPopup && (
                 <div className="verify-popup-overlay" onClick={closeVerifyPopup}>
                     <div className="verify-popup" onClick={(e) => e.stopPropagation()}>
@@ -410,7 +402,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenAuth }: SettingsModalProp
                 </div>
             )}
 
-            {/* Logout confirmation popup */}
             {showLogoutConfirm && (
                 <div className="verify-popup-overlay" onClick={() => setShowLogoutConfirm(false)}>
                     <div className="verify-popup" onClick={(e) => e.stopPropagation()}>

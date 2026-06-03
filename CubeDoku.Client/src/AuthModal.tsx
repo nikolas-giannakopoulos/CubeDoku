@@ -1,28 +1,3 @@
-// AuthModal.tsx
-// Login / Sign Up modal that appears when the player clicks "Log in" from the welcome screen
-//
-// Features:
-//   - Toggle between login and signup mode (same modal, different fields)
-//   - Email/password auth and Google OAuth (via @react-oauth/google)
-//   - Success state with a checkmark animation before closing
-//   - Error display below the form fields
-//
-// The openedFromWelcome prop changes the enter animation direction:
-//   - from welcome modal: slides in from the right (modal-panel-enter-right)
-//   - from elsewhere: standard fade/slide in
-//
-// I was going to separate login and signup into two different modals but reusing one
-// with a toggle is much cleaner and saves duplicating the Google button and divider.
-//
-// The googleLogin hook from @react-oauth/google handles the OAuth flow.
-// It opens a Google popup, the user authenticates there, and on success we get
-// an access_token back which we send to our backend for validation.
-// Note: the backend validates the ID token via GoogleJsonWebSignature, not the access_token.
-// The access_token is used to fetch the user's Google profile... actually I realize I might
-// be mixing up access_token and id_token here. The backend just needs the idToken.
-// Check the AuthController for exactly what it expects.
-// TODO: clarify which token type the backend needs and make sure the frontend sends it correctly
-
 import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -48,7 +23,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false); // shows the checkmark screen
 
-    // reset all state when the modal opens (so old errors don't show on next open)
+    // reset all state when the modal opens
     useEffect(() => {
         if (isOpen) {
             setMode('login');
@@ -62,7 +37,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     }, [isOpen]);
 
     // Google OAuth - opens a popup window managed by Google
-    // on success: we get a token response and send it to our backend
+    // on success: token send to backend
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
@@ -121,7 +96,6 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     return (
         <div className={`auth-overlay${isClosing ? ' modal-overlay-exit' : ' modal-overlay-enter'}`} onClick={onClose}>
             <div className={`auth-modal${isClosing ? ' modal-panel-exit' : (openedFromWelcome ? ' modal-panel-enter-right' : ' modal-panel-enter')}`} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
-                {/* Header */}
                 <div className="modal-header">
                     <button type="button" className="modal-back-btn" onClick={onClose} aria-label="Back">
                         <LuArrowLeft size={20} />
@@ -145,7 +119,6 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
                                 : 'Sign up to track your stats and rank.'}
                         </p>
 
-                        {/* Form fields - username only shown for signup */}
                         {mode === 'signup' && (
                             <input
                                 className="auth-input"
@@ -182,13 +155,11 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
                             <span>or</span>
                         </div>
 
-                        {/* Google sign-in button */}
                         <button type="button" className="auth-google-btn" onClick={(e) => { e.preventDefault(); googleLogin(); }} disabled={busy}>
                             <FcGoogle size={20} />
                             Continue with Google
                         </button>
 
-                        {/* Toggle between login and signup */}
                         <p className="auth-switch">
                             {mode === 'login' ? (
                                 <>Don't have an account?{' '}

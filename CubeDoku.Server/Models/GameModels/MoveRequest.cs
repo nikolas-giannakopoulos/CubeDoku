@@ -1,15 +1,4 @@
-// MoveRequest.cs
 // Sent by the client when the player places a number in a cell
-//
-// The request includes the FULL board state (not just the single cell change)
-// because the server needs to rebuild the entire cube to validate constraints
-// The server is stateless - it doesn't remember what moves were made before
-//
-// I thought about making the server stateful (keeping game state in memory) but
-// that would complicate multi-tab support and server restarts. Stateless is simpler.
-//
-// LockedState is included so the server can double-check that the client isn't
-// trying to modify a cell that should be locked (defense in depth against cheating)
 
 using System.ComponentModel.DataAnnotations;
 

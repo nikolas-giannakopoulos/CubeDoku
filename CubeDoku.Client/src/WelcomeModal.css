@@ -52,7 +52,6 @@
     }
 }
 
-/* Top Left Buttons */
 .welcome-top-left-buttons {
     position: absolute;
     top: 24px;
@@ -63,7 +62,6 @@
     z-index: 10;
 }
 
-/* Top Right Buttons */
 .welcome-top-buttons {
     position: absolute;
     top: 24px;
@@ -100,7 +98,6 @@
     transform: translateY(0);
 }
 
-/* User Dropdown */
 .user-dropdown {
     position: absolute;
     top: 48px;
@@ -134,7 +131,6 @@
     background: var(--color-border);
 }
 
-/* Leaderboard Modal */
 .leaderboard-modal {
     position: fixed;
     top: 0;
@@ -166,7 +162,6 @@
     text-align: center;
 }
 
-/* Leaderboard tabs */
 .lb-tabs {
     display: flex;
     gap: 0;
@@ -188,7 +183,7 @@
     transition: background 0.15s, color 0.15s;
 }
 
-.lb-tab + .lb-tab {
+.lb-tab+.lb-tab {
     border-left: 1px solid var(--color-border);
 }
 
@@ -208,7 +203,6 @@
     margin: 20px 0;
 }
 
-/* Leaderboard table */
 .leaderboard-table-wrap {
     max-height: min(52vh, 440px);
     overflow-y: scroll;
@@ -297,7 +291,6 @@
     border-color: var(--color-border-hover);
 }
 
-/* Header */
 .welcome-header {
     text-align: center;
     margin-top: 0;
@@ -321,7 +314,6 @@
     font-weight: 500;
 }
 
-/* Rules Section */
 .welcome-rules {
     background: var(--color-surface-elevated);
     border-radius: 8px;
@@ -360,7 +352,6 @@
     font-weight: 600;
 }
 
-/* Difficulty Selection */
 .welcome-difficulty {
     margin-bottom: 20px;
 }
@@ -433,7 +424,6 @@
     font-weight: 500;
 }
 
-/* ── Continue last attempt button inside each difficulty card ─────────────── */
 .continue-attempt-btn {
     display: inline-flex;
     align-items: center;
@@ -453,7 +443,6 @@
         border-color 0.15s ease,
         transform 0.15s ease,
         box-shadow 0.15s ease;
-    /* Make sure clicks on this button don't bubble up to the difficulty-btn */
     position: relative;
     z-index: 2;
     white-space: nowrap;
@@ -471,14 +460,12 @@
     box-shadow: none;
 }
 
-/* ── Wrapper for difficulty button and best time line ─────────────── */
 .difficulty-wrapper {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-/* ── Today's personal best line under each difficulty card ─────────────── */
 .difficulty-today-best-line {
     text-align: center;
     color: var(--color-text-primary);
@@ -489,7 +476,6 @@
     user-select: none;
 }
 
-/* Start Button */
 .start-button {
     width: 100%;
     background: var(--color-text-primary);
@@ -515,7 +501,6 @@
     transform: translateY(0);
 }
 
-/* Authentication UI */
 .auth-container {
     display: flex;
     flex-direction: column;
@@ -651,7 +636,6 @@
     color: var(--color-text-primary);
 }
 
-/* Welcome Top Buttons */
 .welcome-text-btn {
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
@@ -684,7 +668,6 @@
     border-color: #ff4d4d;
 }
 
-/* Logout Warning Modal */
 .logout-warning-overlay {
     position: fixed;
     top: 0;

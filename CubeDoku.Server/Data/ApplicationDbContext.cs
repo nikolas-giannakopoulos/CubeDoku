@@ -1,11 +1,3 @@
-// ApplicationDbContext.cs
-// EF Core database context for CubeDoku
-// Currently only has two tables: Users and GameResults
-// I kept this file as thin as possible - no Fluent API config here yet,
-// relying on EF conventions which works fine for this scale
-// If I need to add indexes later (like on PuzzleDate for leaderboard queries)
-// I'd add OnModelCreating here
-
 using Microsoft.EntityFrameworkCore;
 using CubeDoku.Server.Models.UserModels;
 

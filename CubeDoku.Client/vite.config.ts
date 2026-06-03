@@ -47,7 +47,7 @@ const target = env.ASPNETCORE_URLS
         ?.replace('localhost', '127.0.0.1')
     : env.ASPNETCORE_HTTPS_PORT
         ? `https://127.0.0.1:${env.ASPNETCORE_HTTPS_PORT}`
-        : 'http://127.0.0.1:5053';
+        : 'https://cubedoku-server.onrender.com';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -62,11 +62,13 @@ export default defineConfig({
         proxy: {
             '^/weatherforecast': {
                 target,
-                secure: false
+                secure: false,
+                changeOrigin: true
             },
             '^/api': {
                 target,
-                secure: false
+                secure: false,
+                changeOrigin: true
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '5173'),

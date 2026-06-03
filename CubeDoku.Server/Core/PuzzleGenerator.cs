@@ -135,9 +135,6 @@ namespace CubeDoku.Server.Core
             }
         }
 
-        // deep clone a cube - we need this because we want to test removals on a copy
-        // without permanently modifying the puzzle cube
-        // only copies numbers, not locked state (the generator doesn't use locking)
         private Cube CloneCube(Cube original)
         {
             Cube clone = new Cube();
@@ -159,13 +156,8 @@ namespace CubeDoku.Server.Core
             return clone;
         }
 
-        /// <summary>
         /// Main entry point for puzzle generation - tries multiple seeds to find a puzzle
         /// that matches the target difficulty and has fewer clues (harder puzzles).
-        /// 
-        /// Uses a fallback so even if we can't hit the exact difficulty, we return
-        /// something solvable rather than crashing the server.
-        /// </summary>
         public (Cube Puzzle, List<LogicalStep> Steps) GeneratePuzzle(Difficulty targetDifficulty, int maxAttempts = 50)
         {
             Console.WriteLine($"🎯 Generating {targetDifficulty} puzzle (max {maxAttempts} attempts)...");
@@ -179,7 +171,7 @@ namespace CubeDoku.Server.Core
             int fallbackClueCount = 54;
             SolvabilityResult fallbackResult = null;
             
-            // Classic aims for ~25 clues, BrainTerror tries to minimize
+            // Classic aims for 25 clues, BrainTerror tries to minimize
             int targetClues = targetDifficulty == Difficulty.Classic ? 25 : 0;
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
@@ -214,9 +206,7 @@ namespace CubeDoku.Server.Core
                     
                     if (targetDifficulty == Difficulty.Classic)
                     {
-                        // for Classic we want closest to 25 clues (not too easy, not too many)
-                        // GenerateUniquePuzzleStrategic stops at or above the target clue count
-                        // so we pick the puzzle closest to our target
+                        // for Classic we want closest to 25 clues
                         if (bestPuzzle == null) isBetter = true;
                         else if (Math.Abs(tempClues - targetClues) < Math.Abs(bestClueCount - targetClues)) isBetter = true;
                     }
@@ -238,10 +228,9 @@ namespace CubeDoku.Server.Core
 
             if (bestPuzzle == null)
             {
-                // couldn't find a matching difficulty - use the fallback
                 if (fallbackPuzzle != null)
                 {
-                    Console.WriteLine($"⚠️ No exact {targetDifficulty} puzzle found. Using fallback ({fallbackResult!.Difficulty}) with {fallbackClueCount} clues.");
+                    Console.WriteLine($"No exact {targetDifficulty} puzzle found. Using fallback ({fallbackResult!.Difficulty}) with {fallbackClueCount} clues.");
                     bestPuzzle = fallbackPuzzle;
                     bestClueCount = fallbackClueCount;
                     bestResult = fallbackResult;
@@ -257,16 +246,14 @@ namespace CubeDoku.Server.Core
                 throw new Exception("Puzzle generation completed without a solvability result.");
             }
 
-            Console.WriteLine($"✅ Generated {bestResult.Difficulty} puzzle with {bestClueCount} clues");
+            Console.WriteLine($"Generated {bestResult.Difficulty} puzzle with {bestClueCount} clues");
             Console.WriteLine($"   Steps required: {bestResult.StepsRequired}");
             foreach (var tech in bestResult.TechniquesUsed ?? new Dictionary<string, int>())
             {
                 Console.WriteLine($"   - {tech.Key}: {tech.Value} times");
             }
 
-            // run the logical solver one more time on the final puzzle with debug output
-            // this gives us the step list that will be used by the hint system
-            Console.WriteLine("\n🧩 Logical Solving Steps for the Generated Puzzle:");
+            Console.WriteLine("\nLogical Solving Steps for the Generated Puzzle:");
             var finalTestCube = CloneCube(bestPuzzle);
             var stepLogger = new LogicalSolver(finalTestCube, debug: true);
             stepLogger.Solve();
@@ -275,18 +262,7 @@ namespace CubeDoku.Server.Core
             return (bestPuzzle, stepLogger.Result?.Steps ?? new List<LogicalStep>());
         }
 
-        /// <summary>
         /// Strategic removal: removes cells in the order Center → Edge → Corner
-        /// Center cells have only the face constraint (fewest constraints = easiest to remove)
-        /// Edge cells add one more constraint
-        /// Corner cells are hardest to remove because they participate in 3 constraints
-        ///
-        /// This ordering tends to produce puzzles with more remaining clues on corners
-        /// which intuitively feels right - hard puzzles should still have some "anchors"
-        ///
-        /// If targetClues > 0, stops removing once we've reached that many clues
-        /// (used for Classic difficulty which targets around 25)
-        /// </summary>
         private Cube GenerateUniquePuzzleStrategic(int targetClues, out int clueCount)
         {
             // 1. generate a solved cube

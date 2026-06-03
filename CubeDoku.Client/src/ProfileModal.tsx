@@ -1,15 +1,3 @@
-// ProfileModal.tsx
-// Standalone "My Stats" modal - shows personal stats for the logged-in user
-//
-// This is separate from the inline stats panel in WelcomeModal.tsx
-// (I know, they show the same data in basically the same layout - code duplication).
-// The reason they're separate is that ProfileModal was planned as a reusable component
-// that could be opened from other places in the app, not just the welcome screen.
-// In practice it ended up only being used from WelcomeModal, so I could have kept just one.
-// Too late to refactor now.
-//
-// Data comes from GET /api/user/stats - requires auth token
-
 import { useState, useEffect } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { useAuth } from './context/AuthContext';
@@ -74,13 +62,13 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                     <h3>My Stats</h3>
                 </div>
                 {user && <p className="modal-username">{user.username}</p>}
-                
+
                 {loading ? (
                     <p className="modal-loading">Loading stats…</p>
                 ) : stats ? (
                     <div className="stats-container">
                         <p className="stats-total">Total Games: <strong>{stats.totalGames}</strong></p>
-                        
+
                         <div className="stats-grid">
                             <div className="difficulty-stats">
                                 <h4>Classic</h4>

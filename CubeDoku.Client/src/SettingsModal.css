@@ -1,10 +1,7 @@
-/* ── Unified Settings Modal ─────────────────────────────── */
-
 .settings-modal-content {
     min-width: 380px;
 }
 
-/* Tabs */
 .settings-tabs {
     display: flex;
     gap: 4px;
@@ -38,7 +35,6 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
-/* Volume */
 .settings-volume-block {
     margin-top: 4px;
 }
@@ -112,7 +108,6 @@
     flex-shrink: 0;
 }
 
-/* Footer divider + logout */
 .settings-footer-divider {
     height: 1px;
     background: var(--color-border);
@@ -138,7 +133,6 @@
     color: #ff6666;
 }
 
-/* Guest CTA */
 .settings-guest-cta {
     display: flex;
     flex-direction: column;

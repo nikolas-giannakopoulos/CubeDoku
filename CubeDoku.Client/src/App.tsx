@@ -5,4 +5,4 @@ function App() {
     return <CubeViewer />;
 }
 
-export default App;
+export default App;

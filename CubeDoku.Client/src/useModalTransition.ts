@@ -1,24 +1,3 @@
-// useModalTransition.ts
-// Custom hook for handling modal open/close animations
-//
-// The problem: when you set isOpen=false, you want an exit animation to play
-// before the component is actually removed from the DOM. But if you just conditionally
-// render based on isOpen, the component disappears instantly with no animation.
-//
-// This hook solves it with two flags:
-//   shouldRender: controls whether the component is in the DOM at all
-//   isClosing: when true, apply the exit CSS class (triggers the CSS transition)
-//
-// The duration parameter (default 280ms) should match the CSS transition duration
-//
-// Usage pattern in every modal:
-//   const { shouldRender, isClosing } = useModalTransition(isOpen);
-//   if (!shouldRender) return null;
-//   return <div className={`overlay${isClosing ? ' modal-overlay-exit' : ''}`}>...
-//
-// I found this pattern on Stack Overflow and adapted it for our specific transition classes
-// https://stackoverflow.com/questions/54895883/reset-to-initial-state-with-react-hooks
-
 import { useEffect, useState } from 'react';
 
 export function useModalTransition(isOpen: boolean, duration = 280) {
@@ -40,7 +19,7 @@ export function useModalTransition(isOpen: boolean, duration = 280) {
             }, duration);
             return () => clearTimeout(timer);  // cleanup if isOpen changes again before timer fires
         }
-    }, [isOpen]);     // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     return { shouldRender, isClosing };
 }

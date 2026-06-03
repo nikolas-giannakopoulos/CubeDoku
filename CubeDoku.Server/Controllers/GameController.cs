@@ -1,22 +1,3 @@
-// GameController.cs
-// Main game API - handles starting puzzles, validating moves, undos, and hints
-//
-// Design decision: the server is STATELESS for game logic. Each request includes the
-// full board state so the server doesn't need to remember what happened before.
-// This makes it easier to support multiple tabs and avoids session management complexity.
-//
-// The one exception is puzzle caching: we generate the daily puzzle once and cache it
-// in static fields. Generating a puzzle takes a few seconds (due to the backtracking solver)
-// so we don't want to do it on every request. The cache resets at midnight UTC.
-//
-// Thread safety: the static fields are protected by a lock because multiple requests
-// might come in simultaneously (e.g. two players starting a game at the same time).
-// I looked up how to do this properly - Monitor/lock is the right approach here.
-//
-// Note to self: the GameId in StartResponse is hardcoded to 5. I planned to use this
-// for session tracking but never implemented it. Should either implement or remove before
-// final submission. Mentioned this to my supervisor and he said it's fine as-is for the demo.
-
 using Microsoft.AspNetCore.Mvc;
 using CubeDoku.Server.Core;
 using CubeDoku.Server.Models;
@@ -28,14 +9,14 @@ namespace CubeDoku.Server.Controllers
     public class GameController(IWebHostEnvironment env) : ControllerBase
     {
 
-        // static lock to prevent race conditions when multiple requests try to generate puzzles simultaneously
+        // static lock to prevent multiple requests try to generate puzzles 
         private static readonly object _lock = new object();
 
         // cached daily puzzles - null until first request triggers generation
         private static StartResponse? _classicPuzzle = null;
         private static StartResponse? _brainterrorPuzzle = null;
 
-        // cached full solutions (all 54 cells) - only accessible in development via /api/game/solution
+        // cached full solutions (all 54 cells) [for dev]
         private static List<CellDTO>? _classicSolution = null;
         private static List<CellDTO>? _brainterrorSolution = null;
 
@@ -44,7 +25,7 @@ namespace CubeDoku.Server.Controllers
         private static int _cachedPuzzleDay = 0;
 
         // GET /api/game/start?difficulty=Classic|BrainTerror
-        // Returns the puzzle for today - either Classic or BrainTerror difficulty
+        // Returns the puzzle for today - Classic or BrainTerror difficulty
         // Generates and caches it on first call, returns cached version afterwards
         [HttpGet("start")]
         public ActionResult<StartResponse> StartGame([FromQuery] string difficulty = "Classic")
@@ -91,7 +72,6 @@ namespace CubeDoku.Server.Controllers
             }
             catch (Exception ex)
             {
-                // never show internal error details in production - could leak solver logic or seed
                 var detail = env.IsDevelopment() ? ex.Message : "An unexpected error occurred.";
                 return StatusCode(500, detail);
             }
@@ -99,7 +79,6 @@ namespace CubeDoku.Server.Controllers
 
         // GET /api/game/solution?difficulty=Classic|BrainTerror
         // Returns the full solved puzzle (all 54 cells) || DEV ONLY
-        // TODO: Remove on production
         [HttpGet("solution")]
         public ActionResult<List<CellDTO>> GetSolution([FromQuery] string difficulty = "Classic")
         {
@@ -116,8 +95,7 @@ namespace CubeDoku.Server.Controllers
         }
 
         // POST /api/game/revert
-        // Called when the player uses undo - re-validates the whole board after undo
-        // The client already handles the undo logic, this just recomputes the error/completion states
+        // Undo Button
         [HttpPost("revert")]
         public ActionResult<MoveResponse> RevertBoard([FromBody] RevertRequest request)
         {
@@ -170,7 +148,7 @@ namespace CubeDoku.Server.Controllers
                 }
 
                 var response = ConvertToMoveResponse(allCells, cube);
-                response.IsSolved = false; // can't be solved after undo (you removed a correct answer)
+                response.IsSolved = false;
                 return Ok(response);
             }
             catch (Exception ex)
@@ -210,7 +188,6 @@ namespace CubeDoku.Server.Controllers
                 CubeFaces targetFace = Enum.Parse<CubeFaces>(faceString);
 
                 // server-side lock check - reject if the client is trying to modify a clue cell
-                // the client should prevent this too but we double-check here as a safeguard
                 if (request.LockedState != null && request.LockedState.Length == 54)
                 {
                     int targetIndex = GetCellIndex(targetFace, request.Row, request.Column);
@@ -227,8 +204,6 @@ namespace CubeDoku.Server.Controllers
                 // validate the cell that was just changed and its neighbors (edge/corner partners, same face)
                 List<Cell> updatedCells = checker.IndividualChecker(newCell, cube);
 
-                // make sure the cell we just changed is always in the response
-                // (even if it's not in error and nothing "changed" visually)
                 if (!updatedCells.Contains(newCell))
                 {
                     updatedCells.Add(newCell);
@@ -236,10 +211,6 @@ namespace CubeDoku.Server.Controllers
 
                 // re-validate ALL other filled cells across the whole board
                 // this is needed so that cross-face edge/corner partners have their state
-                // correctly updated when their own IndividualChecker runs.
-                // We collect all returned cells and merge them, so nothing is silently discarded.
-                // (The old code discarded the return values here, which meant partner cells whose
-                //  Error was cleared/set by later calls never made it into the response.)
                 foreach (var face in Enum.GetValues<CubeFaces>())
                 {
                     for (int row = 0; row < 3; row++)
@@ -271,13 +242,8 @@ namespace CubeDoku.Server.Controllers
 
         // POST /api/game/hint
         // Returns the next logical hint for the current board state
-        //
-        // The hint logic has two phases:
-        //   1. If any player-placed number is WRONG: correct it first (higher priority)
-        //   2. Otherwise: reveal the next step from the logical solution
-        //
+
         // We derive the correct solution by taking only the locked cells and solving from scratch.
-        // This means hints work even if the player has placed some wrong numbers.
         [HttpPost("hint")]
         public ActionResult<HintResponse> GetHint([FromBody] HintRequest request)
         {
@@ -286,7 +252,7 @@ namespace CubeDoku.Server.Controllers
                 if (request.CurrentState == null || request.CurrentState.Length != 54)
                     return BadRequest("CurrentState must contain exactly 54 values.");
 
-                // build a cube with ONLY the locked (given) cells, then solve it to get the correct solution
+                // build a cube with ONLY the locked cells, then solve it to get the correct solution
                 Cube baseCube = new Cube();
                 int idx = 0;
                 foreach (var face in Enum.GetValues<CubeFaces>())
@@ -305,7 +271,6 @@ namespace CubeDoku.Server.Controllers
                 }
 
                 // solve from the locked state to get the definitive correct answer
-                // using a fixed seed (12345) for consistency - same puzzle always has same solution
                 var solutionSolver = new Solver(12345);
                 solutionSolver.run(baseCube);
 
@@ -340,7 +305,7 @@ namespace CubeDoku.Server.Controllers
                 }
 
                 // phase 2: no wrong numbers - reveal the next logical step
-                // run the LogicalSolver on the current (correct) board state
+                // run the LogicalSolver on the current board state
                 Cube currentCube = new Cube();
                 idx = 0;
                 foreach (var face in Enum.GetValues<CubeFaces>())
@@ -359,8 +324,6 @@ namespace CubeDoku.Server.Controllers
                 var result = solver.Solve();
 
                 // find the first step that applies to a cell the player hasn't filled yet
-                // (the LogicalSolver mutates currentCube while solving, so we check against
-                //  the ORIGINAL request state to find truly empty cells)
                 var nextStep = result.Steps.FirstOrDefault(step =>
                 {
                     int stepIdx = GetCellIndex(step.Position.face, step.Position.row, step.Position.column);
@@ -370,8 +333,8 @@ namespace CubeDoku.Server.Controllers
 
                 if (nextStep == null)
                 {
-                    // logical solver didn't find a step - fall back to just showing any empty cell from the solution
-                    // this handles cases where the puzzle is partially in a state the logical solver can't handle
+                    // logical solver didn't find a step 
+                    // fall back to just showing any empty cell from the solution
                     idx = 0;
                     foreach (var face in Enum.GetValues<CubeFaces>())
                     {
@@ -397,7 +360,6 @@ namespace CubeDoku.Server.Controllers
                     return BadRequest("No hint is available for the current board state.");
                 }
 
-                // safety check: make sure hint doesn't point at a locked cell
                 if (request.LockedState != null && request.LockedState.Length == 54)
                 {
                     int stepIdx = GetCellIndex(nextStep.Position.face, nextStep.Position.row, nextStep.Position.column);
@@ -427,8 +389,7 @@ namespace CubeDoku.Server.Controllers
             return ((int)face * 9) + (row * 3) + column;
         }
 
-        // converts the puzzle cube (with only clue cells non-zero) to the StartResponse format
-        // locked cells = cells with values from the generator (player can't change these)
+        // converts the puzzle cube  to the StartResponse format
         private StartResponse ConvertToStartResponse(Cube cube, string difficulty, List<LogicalStep> steps)
         {
             var lockedCells = new List<CellDTO>();
@@ -458,15 +419,13 @@ namespace CubeDoku.Server.Controllers
             }
             return new StartResponse
             {
-                GameId = 5,   // placeholder - see note at top of file
+                GameId = 5,
                 LockedCells = lockedCells,
                 LogicalSteps = steps
             };
         }
 
-        // solve the puzzle fully and return all 54 cells
-        // used to pre-cache the complete solution for the DEV endpoint
-        // works on a fresh clone so we never touch the cached puzzle
+        // Pre-caches the full solution || DEV only
         private List<CellDTO> SolvePuzzleToFull(Cube puzzleCube, int seed)
         {
             Cube solveCube = new Cube();
@@ -496,8 +455,6 @@ namespace CubeDoku.Server.Controllers
             return result;
         }
 
-        // convert a list of Cell objects to the MoveResponse DTO format
-        // also computes whether the puzzle is solved (all filled, none in Error state)
         private MoveResponse ConvertToMoveResponse(List<Cell> list, Cube cube)
         {
             var updatedCells = new List<CellUpdateDTO>();
@@ -514,8 +471,6 @@ namespace CubeDoku.Server.Controllers
                 };
                 updatedCells.Add(cellDTO);
             }
-            // var gameId = $"{DateTime.UtcNow:yyyyMMdd}_{difficulty}_{Guid.NewGuid():N}";
-            // ^ old code from when I was planning to use session IDs - keeping as a note
             return new MoveResponse
             {
                 updatedCells = updatedCells,

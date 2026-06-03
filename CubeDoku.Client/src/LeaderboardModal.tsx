@@ -1,24 +1,3 @@
-// LeaderboardModal.tsx
-// Shows the daily leaderboard for Classic and BrainTerror difficulty
-//
-// Data comes from GET /api/user/leaderboard?date=YYYY-MM-DD
-// The API returns results for ALL difficulties on that date, and this component
-// filters client-side based on the selected tab. Slightly wasteful but the total
-// result set is small and it means we only make one request per modal open.
-//
-// Features:
-//   - Tab switching between Classic and BrainTerror
-//   - "You" row highlighted in a different color (identified by username match)
-//   - "pinnedEntry" prop: allows the parent to pin the player's own result at the top
-//     even if it hasn't been saved to the server yet (or if the server response is stale)
-//   - Username resolution: falls back to decoding from localStorage token if AuthContext
-//     isn't hydrated yet (can happen if leaderboard opens before auth is fully loaded)
-//
-// The username highlighting logic is a bit fragile - it relies on string matching which
-// breaks if two users have the same username. I should add proper user ID comparison
-// but the IDs aren't included in the leaderboard response right now.
-// TODO: either add userId to leaderboard entries, or accept that identical usernames won't highlight correctly
-
 import { useEffect, useState } from 'react';
 import { useModalTransition } from './useModalTransition';
 import { jwtDecode } from 'jwt-decode';
@@ -27,7 +6,6 @@ import { useAuth } from './context/AuthContext';
 import './WelcomeModal.css';
 import './ProfileModal.css';
 
-// one row from the leaderboard API
 interface LeaderboardEntry {
     username: string;
     difficulty: string;
@@ -41,7 +19,7 @@ interface LeaderboardModalProps {
     isOpen: boolean;
     onClose: () => void;
     defaultTab?: 'Classic' | 'BrainTerror';
-    pinnedEntry?: LeaderboardEntry | null;   // player's own entry to pin at top if not in list yet
+    pinnedEntry?: LeaderboardEntry | null;
 }
 
 interface TokenClaims {
@@ -66,15 +44,12 @@ export const LeaderboardModal = ({
     const [allData, setAllData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // fallback: if user isn't loaded from AuthContext yet, try decoding from localStorage
-    // this can happen when the leaderboard is opened very quickly after page load
     const getLoggedInUsername = () => {
         if (user?.username) return user.username;
         try {
             const token = localStorage.getItem('token');
             if (token) {
                 const decoded = jwtDecode<TokenClaims>(token);
-                // ASP.NET puts the name in a long claim URI OR in unique_name
                 const claimName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
                 if (typeof claimName === 'string') return claimName;
                 if (typeof decoded.unique_name === 'string') return decoded.unique_name;
@@ -87,7 +62,7 @@ export const LeaderboardModal = ({
 
     const loggedInUsername = getLoggedInUsername();
 
-    // sync the tab with the defaultTab prop (changes when the user selects a different difficulty in the welcome modal)
+    // sync the tab with the defaultTab prop 
     useEffect(() => {
         setTab(defaultTab);
     }, [defaultTab, isOpen]);
@@ -134,7 +109,6 @@ export const LeaderboardModal = ({
                     <h2>Leaderboard</h2>
                 </div>
 
-                {/* Tab bar for Classic / Brain Terror */}
                 <div className="lb-tabs">
                     <button
                         className={`lb-tab${tab === 'Classic' ? ' active' : ''}`}

@@ -5,7 +5,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* 2025 Minimalistic Palette */
+  /* Pallete */
   --color-bg: #0A0A0A;
   --color-surface: #121212;
   --color-surface-elevated: #1A1A1A;
@@ -39,16 +39,15 @@
 }
 
 :root[data-theme='light'] {
-  /* ── Refined Warm Stone Palette — modern, eye-friendly ── */
-  --color-bg: #D6B896;               /* warm sandy canvas */
-  --color-surface: #E5DDD1;          /* warm mid-tone — panels, cards */
-  --color-surface-elevated: #F0E9E1; /* warm cream — inputs, elevated rows */
+  --color-bg: #D6B896;
+  --color-surface: #E5DDD1;
+  --color-surface-elevated: #F0E9E1;
   --color-border: rgba(108, 74, 44, 0.14);
   --color-border-hover: rgba(108, 74, 44, 0.28);
-  --color-text-primary: #1A0F07;    /* deep warm near-black */
-  --color-text-secondary: #4E3C2C;  /* medium warm brown */
-  --color-text-tertiary: #7A6050;   /* muted warm brown */
-  --color-accent: #7C3AED;          /* rich purple accent */
+  --color-text-primary: #1A0F07;
+  --color-text-secondary: #4E3C2C;
+  --color-text-tertiary: #7A6050;
+  --color-accent: #7C3AED;
   --color-accent-hover: #9333EA;
   --color-accent-muted: rgba(124, 58, 237, 0.10);
   --color-error: #BE1F1F;
@@ -58,7 +57,6 @@
   --color-warning-muted: rgba(146, 64, 14, 0.10);
   --color-danger: #B91C1C;
   --color-danger-muted: rgba(185, 28, 28, 0.08);
-  /* Modal / overlay surfaces — warm cream glass, never pure white */
   --color-surface-overlay: rgba(240, 233, 225, 0.98);
   --color-panel-bg: rgba(229, 221, 209, 0.84);
   --color-overlay-backdrop: rgba(120, 86, 52, 0.36);
@@ -155,63 +153,98 @@ button:focus-visible {
   color: var(--color-text-tertiary);
 }
 
-/* ── Global Modal Transition Animations ─────────────────────────── */
 @keyframes _modal-panel-in {
-  from { opacity: 0; transform: translateY(40px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
-}
-@keyframes _modal-panel-out {
-  from { opacity: 1; transform: translateY(0)     scale(1);    }
-  to   { opacity: 0; transform: translateY(-28px) scale(0.97); }
-}
-@keyframes _modal-overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes _modal-overlay-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-/* Directional: welcome slides left toward auth */
-@keyframes _modal-panel-out-left {
-  from { opacity: 1; transform: translateX(0)     scale(1);    }
-  to   { opacity: 0; transform: translateX(-60px) scale(0.94); }
+@keyframes _modal-panel-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.97);
+  }
 }
-/* Directional: auth slides in from the right */
+
+@keyframes _modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes _modal-overlay-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes _modal-panel-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-60px) scale(0.94);
+  }
+}
+
 @keyframes _modal-panel-in-right {
-  from { opacity: 0; transform: translateX(60px) scale(0.94); }
-  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 .modal-panel-enter {
   animation: _modal-panel-in 0.36s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
+
 .modal-panel-exit {
   animation: _modal-panel-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
 }
+
 .modal-overlay-enter {
   animation: _modal-overlay-in 0.22s ease both;
 }
+
 .modal-overlay-exit {
   animation: _modal-overlay-out 0.24s ease both;
 }
 
-/* Used when welcome modal exits toward auth */
 .modal-panel-exit-left {
   animation: _modal-panel-out-left 0.26s cubic-bezier(0.4, 0, 1, 1) both;
 }
-/* Used when auth modal enters from welcome */
+
 .modal-panel-enter-right {
   animation: _modal-panel-in-right 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   Light Mode Enhancements — warm stone design system
-   All components harmonized with the sandy/cream/purple palette
-   ══════════════════════════════════════════════════════════════ */
-
-/* ─ Overlay backdrops: warm amber tint instead of dark smoke ─ */
 :root[data-theme='light'] .auth-overlay {
   background: rgba(120, 86, 52, 0.44);
   backdrop-filter: blur(14px) saturate(160%);
@@ -230,7 +263,6 @@ button:focus-visible {
   background: rgba(120, 86, 52, 0.36);
 }
 
-/* ─ Modal cards — warm cream glass with amber-tinted depth shadows ─ */
 :root[data-theme='light'] .welcome-modal,
 :root[data-theme='light'] .leaderboard-content,
 :root[data-theme='light'] .modal-content,
@@ -250,7 +282,6 @@ button:focus-visible {
   border-color: rgba(108, 74, 44, 0.17);
 }
 
-/* ─ Floating panels — warm glassmorphism ─ */
 :root[data-theme='light'] .right-panel,
 :root[data-theme='light'] .right-panel-2,
 :root[data-theme='light'] .bottom-left-panel,
@@ -263,14 +294,12 @@ button:focus-visible {
   border-color: rgba(108, 74, 44, 0.15);
 }
 
-/* ─ Top bar — warm frosted glass ─ */
 :root[data-theme='light'] .top-bar {
   background: rgba(229, 221, 209, 0.92);
   border-bottom-color: rgba(108, 74, 44, 0.16);
   box-shadow: 0 1px 8px rgba(80, 52, 24, 0.10);
 }
 
-/* ─ Icon buttons on top-bar ─ */
 :root[data-theme='light'] .top-bar .icon-button {
   background: rgba(240, 233, 225, 0.55);
   border-color: rgba(108, 74, 44, 0.14);
@@ -281,7 +310,6 @@ button:focus-visible {
   border-color: rgba(108, 74, 44, 0.26);
 }
 
-/* ─ Input fields — warm cream, never pure white ─ */
 :root[data-theme='light'] .auth-input,
 :root[data-theme='light'] .settings-input {
   background: rgba(240, 233, 225, 0.88);
@@ -296,12 +324,11 @@ button:focus-visible {
 
 :root[data-theme='light'] .auth-input:focus,
 :root[data-theme='light'] .settings-input:focus {
-  background: rgba(252, 247, 242, 0.99); /* warm near-white — never pure #fff */
+  background: rgba(252, 247, 242, 0.99);
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
-/* ─ Number / action / extra buttons ─ */
 :root[data-theme='light'] .number-btn,
 :root[data-theme='light'] .action-btn,
 :root[data-theme='light'] .extra-btn {
@@ -316,14 +343,12 @@ button:focus-visible {
   border-color: rgba(108, 74, 44, 0.26);
 }
 
-/* ─ Pencil mode selected — warm green variant ─ */
 :root[data-theme='light'] .pencil-btn.selected {
   border-color: #1E9660 !important;
   background: rgba(30, 150, 96, 0.10) !important;
   color: #196B48 !important;
 }
 
-/* ─ Start / auth primary action buttons ─ */
 :root[data-theme='light'] .start-button,
 :root[data-theme='light'] .auth-action-btn {
   background: var(--color-text-primary);
@@ -335,7 +360,6 @@ button:focus-visible {
   background: var(--color-text-secondary);
 }
 
-/* ─ Warm scrollbars ─ */
 :root[data-theme='light'] .right-panel::-webkit-scrollbar-thumb,
 :root[data-theme='light'] .right-panel-2::-webkit-scrollbar-thumb,
 :root[data-theme='light'] .welcome-modal::-webkit-scrollbar-thumb,
@@ -352,7 +376,6 @@ button:focus-visible {
   background: rgba(108, 74, 44, 0.44);
 }
 
-/* ─ Settings / leaderboard tabs ─ */
 :root[data-theme='light'] .settings-tab.active {
   background: var(--color-surface-overlay);
   box-shadow: 0 1px 4px rgba(80, 52, 24, 0.14);
@@ -367,7 +390,6 @@ button:focus-visible {
   background: rgba(229, 221, 209, 0.80);
 }
 
-/* ─ Difficulty cards ─ */
 :root[data-theme='light'] .difficulty-btn {
   background: rgba(240, 233, 225, 0.72);
   border-color: rgba(108, 74, 44, 0.14);
@@ -384,7 +406,6 @@ button:focus-visible {
   box-shadow: 0 8px 24px rgba(124, 58, 237, 0.16);
 }
 
-/* ─ Continue attempt pill — warmer teal ─ */
 :root[data-theme='light'] .continue-attempt-btn {
   border-color: rgba(30, 140, 110, 0.50);
   background: rgba(30, 140, 110, 0.09);
@@ -397,12 +418,10 @@ button:focus-visible {
   box-shadow: 0 4px 14px rgba(30, 140, 110, 0.18);
 }
 
-/* ─ Complete-modal stat rows ─ */
 :root[data-theme='light'] .complete-stat-row {
   background: rgba(240, 233, 225, 0.75);
 }
 
-/* ─ Complete board strip ─ */
 :root[data-theme='light'] .complete-board-strip {
   background: rgba(229, 221, 209, 0.65);
 }
@@ -411,13 +430,11 @@ button:focus-visible {
   background: rgba(240, 233, 225, 0.95);
 }
 
-/* ─ Warning / danger badges ─ */
 :root[data-theme='light'] .confirm-reset-warning {
   background: rgba(146, 64, 14, 0.07);
   border-color: rgba(146, 64, 14, 0.18);
 }
 
-/* ─ Settings logout button ─ */
 :root[data-theme='light'] .settings-logout-btn {
   background: rgba(185, 28, 28, 0.06);
   border-color: rgba(185, 28, 28, 0.26);
@@ -430,25 +447,21 @@ button:focus-visible {
   color: #C03030;
 }
 
-/* ─ Leaderboard table sticky header ─ */
 :root[data-theme='light'] .leaderboard-table th {
   background: rgba(240, 233, 225, 0.97);
 }
 
-/* ─ User dropdown ─ */
 :root[data-theme='light'] .user-dropdown {
   background: var(--color-surface-overlay);
   border-color: rgba(108, 74, 44, 0.16);
   box-shadow: 0 6px 20px rgba(80, 52, 24, 0.18);
 }
 
-/* ─ HowTo shot slot ─ */
 :root[data-theme='light'] .howto-shot-slot {
   background: var(--color-surface-elevated);
   border-color: rgba(108, 74, 44, 0.18);
 }
 
-/* ─ Tab paused icon circle ─ */
 :root[data-theme='light'] .tab-paused-icon {
   background: var(--color-accent-muted);
   border-color: rgba(124, 58, 237, 0.28);

@@ -71,14 +71,15 @@
     border-radius: 12px;
     overflow: hidden;
     background: var(--color-surface);
-    line-height: 0; /* remove gap below inline img */
+    line-height: 0;
+    /* remove gap below inline img */
 }
 
 .howto-shot-img {
     width: 100%;
     height: auto;
     display: block;
-    border-radius: 11px; /* 1px less than parent so border shows */
+    border-radius: 11px;
     object-fit: cover;
 }
 

@@ -18,3 +18,6 @@ node_modules/
 dist/
 
 CubeDoku.Server/appsettings.Development.json
+
+# Thesis files
+Thesis/

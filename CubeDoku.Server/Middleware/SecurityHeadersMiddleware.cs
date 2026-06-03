@@ -1,22 +1,5 @@
 // SecurityHeadersMiddleware.cs
 // Adds HTTP security headers to every response
-//
-// I learned about these headers from the OWASP Secure Headers Project:
-// https://owasp.org/www-project-secure-headers/
-//
-// Most of these are one-liners that protect against specific attack classes:
-//   X-Content-Type-Options: prevents MIME sniffing (browsers guessing content types)
-//   X-Frame-Options: prevents clickjacking via iframes
-//   Referrer-Policy: limits information sent in the Referer header
-//   Permissions-Policy: disables browser features the app doesn't need
-//   Content-Security-Policy: probably the most complex one - restricts where resources load from
-//
-// The CSP was tricky to get right because React needs 'unsafe-inline' for styles
-// (React's className system injects styles at runtime). If I had more time I'd investigate
-// adding a nonce-based approach to avoid 'unsafe-inline' but that requires server-side rendering.
-//
-// Also removes server identification headers that Kestrel/ASP.NET add by default
-// (no need to advertise exactly what software the server runs)
 
 namespace CubeDoku.Server.Middleware;
 

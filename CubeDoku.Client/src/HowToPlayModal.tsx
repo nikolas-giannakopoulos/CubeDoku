@@ -1,34 +1,14 @@
-// HowToPlayModal.tsx
-// Explains the three rules of CubeDoku to the player
-//
-// Rules:
-//   1. Face Rule (Sudoku): each face must have 1-9 with no repeats
-//   2. Edge Rule: two cells sharing a cube edge must sum to 12
-//   3. Corner Rule: three cells meeting at a cube corner must sum to 12
-//
-// Each rule has a visual screenshot to illustrate it
-// The screenshots come in light and dark variants, selected based on the current theme
-// (the ThemeContext tells us which theme is active)
-//
-// These images were captured from the actual game and then annotated in Figma.
-// Getting them to show correctly at the right size on both mobile and desktop
-// took more CSS trial and error than I'd like to admit.
-//
-// Clicking outside the modal closes it (handled by the overlay onClick)
-// The aria attributes (role="dialog", aria-modal, aria-label) are for screen reader accessibility
-// I wasn't sure if I needed all of them but it seemed better to include too many than too few
-
 import { LuX } from 'react-icons/lu';
 import { useModalTransition } from './useModalTransition';
 import { useTheme } from './context/ThemeContext';
 import './HowToPlayModal.css';
 import './ProfileModal.css';
 
-import firstDark  from './assets/first_dark.png';
+import firstDark from './assets/first_dark.png';
 import firstLight from './assets/first_light.png';
-import secondDark  from './assets/second_dark.png';
+import secondDark from './assets/second_dark.png';
 import secondLight from './assets/second_light.png';
-import thirdDark  from './assets/third_dark.png';
+import thirdDark from './assets/third_dark.png';
 import thirdLight from './assets/third_light.png';
 
 interface HowToPlayModalProps {

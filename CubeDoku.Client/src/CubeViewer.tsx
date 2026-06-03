@@ -23,30 +23,23 @@ import './UI.css';
 
 const THEME_MATERIALS = {
     dark: {
-        // Glossy dark gray — darker than before, IBL gives it the sheen
         cell: { color: 0x363638, roughness: 0.18, metalness: 0.45, opacity: 1 },
         locked: { color: 0x2B2B30, roughness: 0.14, metalness: 0.55, opacity: 1 },
         fail: { color: 0xCC3333, roughness: 0.22, metalness: 0.18, opacity: 1 },
         fail_dark: { color: 0x7A1A1A, roughness: 0.28, metalness: 0.20, opacity: 1 },
         base: { color: 0x252527, roughness: 0.30, metalness: 0.40 },
-        // Numbers: clean crisp white — IBL provides specularity, minimal emissive for shadow visibility only
         num_default: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x333333, emissiveIntensity: 0.10 },
         num_error: { color: 0xFFFFFF, roughness: 0.06, metalness: 0.65, emissive: 0x222222, emissiveIntensity: 0.08 },
-        // Hint outline ribbon — crisp mid-silver to match the white numbers and dark cells
         hint_outline: { color: 0x77777D, roughness: 0.30, metalness: 0.50, emissive: 0x44444A, emissiveIntensity: 0.25 }
     },
     light: {
-        // Low roughness + moderate metalness mirrors the dark-mode gloss formula
         cell: { color: 0xFEFCFA, roughness: 0.14, metalness: 0.20, opacity: 0.98 },
         locked: { color: 0xF3F0EB, roughness: 0.12, metalness: 0.24, opacity: 1 },
         fail: { color: 0xE85548, roughness: 0.18, metalness: 0.10, opacity: 1 },
         fail_dark: { color: 0xBC3B2E, roughness: 0.22, metalness: 0.12, opacity: 1 },
         base: { color: 0xEDEAE4, roughness: 0.38, metalness: 0.10 },
-        // Buttery gold — slightly de-saturated, glow dialed down to a barely-there hint
         num_default: { color: 0xD0AD48, roughness: 0.30, metalness: 0.78, emissive: 0x8A6A10, emissiveIntensity: 0.12 },
-        // White on error cells — pops against the coral background; glow kept very faint
         num_error: { color: 0xFFFFFF, roughness: 0.22, metalness: 0.30, emissive: 0xEEEEEE, emissiveIntensity: 0.10 },
-        // Hint outline ribbon — deep charcoal/slate to provide strong contrast against gold while fitting the elegant theme
         hint_outline: { color: 0x4A4A50, roughness: 0.40, metalness: 0.20, emissive: 0x222225, emissiveIntensity: 0.10 }
     }
 };
@@ -66,8 +59,6 @@ const tweenMatDef = (mat: any, target: any, duration = 0.4) => {
             onUpdate: () => { mat.transparent = mat.opacity < 1; }
         });
     }
-    // Use != null (not truthiness) — emissive is always a Color object, but Color(0,0,0) is falsy.
-    // emissiveIntensity defaults to 0 which is also falsy — must use !== undefined.
     if (target.emissive != null) {
         if (!mat.emissive) mat.emissive = new THREE.Color(0x000000);
         const tgtEmi = new THREE.Color(target.emissive);
@@ -153,7 +144,6 @@ function SimpleNumClone({
         });
 
         return clone;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [assetNode, cfg.color, cfg.emissive, cfg.emissiveIntensity]);
 
     return <primitive object={cloned} visible={true} raycast={() => null} />;
@@ -187,7 +177,6 @@ function CubeModel({
     useMemo(() => {
         if (!materials) return;
 
-        // Clone / ensure base variants exist
         if (materials['Cell_Material'] && !materials.Cell_Fail) {
             materials.Cell_Fail = materials['Cell_Material'].clone();
             materials.Cell_Fail.name = 'Cell_Fail';
@@ -208,16 +197,13 @@ function CubeModel({
         for (let i = 1; i <= 9; i++) {
             const matName = `Asset_Num_${i}_Mat`;
 
-            // If the GLB doesn't have this material, create a fresh one
+            // If the GLB doesn't have this material, create a new one
             if (!materials[matName]) {
                 materials[matName] = new THREE.MeshStandardMaterial({ name: matName });
             }
 
             const m = materials[matName] as THREE.MeshStandardMaterial;
 
-            // ── Force-initialize number materials with bright metallic+emissive values.
-            // GLTF defaults are opaque black with no emissive; we must override every
-            // relevant property immediately so the first render is already correct.
             m.color.set(0xFFFFFF);
             m.roughness = 0.15;
             m.metalness = 0.85;
@@ -258,7 +244,6 @@ function CubeModel({
             }
         }
 
-        // --- Critical Link Fix ---
         if (scene) {
             scene.traverse((obj: any) => {
                 if (obj.isMesh) {
@@ -271,28 +256,23 @@ function CubeModel({
     }, [theme, materials, scene]);
 
 
-    // Hide the original asset meshes so they don't appear in their default export location
-    // We only want to show them where we explicitly place them
+    // Hide the original asset meshes
     useEffect(() => {
         if (!nodes) return;
         Object.keys(nodes).forEach(nodeName => {
-            // Hide all number assets (including the new _Outline variants)
             if (nodeName.startsWith('Asset_Num_') && nodes[nodeName]) {
                 nodes[nodeName].visible = false;
             }
-            // Cleanup duplicate meshes exported from Blender
             if (nodeName.includes('.001') || nodeName.endsWith('001')) {
                 if (nodes[nodeName]) {
                     nodes[nodeName].visible = false;
                     nodes[nodeName].position.set(9999, 9999, 9999);
-                    // Disable scale so it doesn't participate in anything
                     nodes[nodeName].scale.set(0, 0, 0);
                 }
             }
         });
     }, [nodes]);
 
-    // Determines if a node is a proper cell tile (e.g. Front_1_2) vs a backplate/structural mesh
     const isCellTileNode = (nodeName: string): boolean => {
         const parts = nodeName.split('_');
         return parts.length === 3 &&
@@ -301,16 +281,11 @@ function CubeModel({
             !isNaN(Number(parts[2]));
     };
 
-    // Tracks which cell IDs were in error last render — diff used to fire pop only ONCE per new error
     const prevErroredCellsRef = useRef<Set<string>>(new Set());
 
-    // Effect to apply error materials with two-tier system:
-    //  - Cell tile meshes (Front_R_C) → bright red (Cell_Fail)
-    //  - Backplate/structural meshes on same face → darker red (Cell_Fail_Dark)
     useEffect(() => {
         if (!materials) return;
 
-        // Build the current full set of errored cell tile IDs (both sources)
         const currentErroredCells = new Set<string>();
 
         // Reset ALL face nodes to default material
@@ -318,7 +293,6 @@ function CubeModel({
             if (['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].some(face => nodeName.startsWith(face))) {
                 const node = nodes[nodeName];
                 if (node && (node as any).material) {
-                    // Cell tiles get the cell material, structural backplates get the base material
                     if (isCellTileNode(nodeName)) {
                         (node as any).material = materials.Cell_Material;
                     } else {
@@ -338,7 +312,6 @@ function CubeModel({
                         (node as any).material = materials.Cell_Fail;
                         currentErroredCells.add(nodeName);
                     } else {
-                        // Backplate / structural mesh on this face → subtle dark red
                         (node as any).material = materials.Cell_Fail_Dark;
                     }
                 }
@@ -360,9 +333,6 @@ function CubeModel({
             }
         });
 
-        // Outward pop — fires only for cells NEWLY entering error state this render.
-        // Cell nudges outward from the cube face then snaps back to its exact original position.
-        // The number group on that cell animates in perfect sync on the same GSAP timeline.
         currentErroredCells.forEach(cellId => {
             if (prevErroredCellsRef.current.has(cellId)) return; // already errored, skip
 
@@ -370,14 +340,13 @@ function CubeModel({
             if (!cellMesh) return;
 
             const { axis, sign } = getFacePressAxis(cellId);
-            // Cache original position once — reused if the same cell re-errors later
             if (!cellMesh.userData._origPos) {
                 cellMesh.userData._origPos = {
                     x: cellMesh.position.x, y: cellMesh.position.y, z: cellMesh.position.z,
                 };
             }
             const origPos = cellMesh.userData._origPos;
-            const NUDGE = 0.03; // very light — just a hint of movement
+            const NUDGE = 0.03;
 
             // Shared timeline so cell + number move as one unit
             const tl = gsap.timeline();
@@ -1029,15 +998,15 @@ function CubeViewer() {
         } else if (isLast) {
             if (above[1]) result.push({ ...above[1], isPlayer: false, slot: 1 });
             if (above[0]) result.push({ ...above[0], isPlayer: false, slot: 2 });
-            
+
             const newSlot = (result.length + 1) as 1 | 2 | 3;
             result.push({ ...player, isPlayer: true, slot: newSlot, startSlot: newSlot });
         } else {
             if (above[0]) result.push({ ...above[0], isPlayer: false, slot: 1 });
-            
+
             const newSlot = (result.length + 1) as 1 | 2 | 3;
             result.push({ ...player, isPlayer: true, slot: newSlot, startSlot: (newSlot + 1) as 1 | 2 | 3 });
-            
+
             if (below[0]) result.push({ ...below[0], isPlayer: false, slot: (newSlot + 1) as 1 | 2 | 3 });
         }
 
@@ -1054,27 +1023,7 @@ function CubeViewer() {
         return result;
     };
 
-    /*
-    const _startGameFromServer = async (difficulty: 'Classic' | 'BrainTerror') => {
-        try {
-            const headers: Record<string, string> = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            const response = await fetch(`/api/game/start?difficulty=${difficulty}`, { method: 'GET', headers });
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Failed to start game (${response.status}): ${errText}`);
-            }
-            const data = await response.json();
-            const lockedCells = data.lockedCells ?? data.LockedCells ?? [];
-            handleDifficultySelect(difficulty, lockedCells);
-            setCompletionSummary(null);
-            setHasCompletionAuthSuccess(false);
-        } catch (error) {
-            console.error('Error starting game:', error);
-        }
-    };
-    */
-;
+    ;
 
     const saveCompletionSummary = async (summary: CompletionSummary) => {
         if (isSavingResultRef.current) return;
@@ -2263,9 +2212,8 @@ function CubeViewer() {
                         <LuPencil size={20} />
                     </button>
                     <button
-                        className={`action-btn hint-btn${
-                            hintsUsed >= HINT_LIMITS[currentDifficultyRef.current] ? ' hint-btn-exhausted' : ''
-                        }${hintBtnShake ? ' hint-btn-shake' : ''}`}
+                        className={`action-btn hint-btn${hintsUsed >= HINT_LIMITS[currentDifficultyRef.current] ? ' hint-btn-exhausted' : ''
+                            }${hintBtnShake ? ' hint-btn-shake' : ''}`}
                         title="Hint"
                         onClick={() => {
                             const limit = HINT_LIMITS[currentDifficultyRef.current];

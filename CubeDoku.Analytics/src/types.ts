@@ -28,9 +28,3 @@ export interface AuditLog {
 }
 
 export type Tab = 'overview' | 'research' | 'audit';
-
-export interface ChatMessage {
-  sender: 'user' | 'ai';
-  text: string;
-  time: string;
-}

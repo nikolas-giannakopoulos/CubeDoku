@@ -60,10 +60,31 @@ export default function ResearchTab({ metrics, onExportCSV: _onExportCSV }: Prop
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Message: text }),
       });
+
       const data = await res.json();
-      setMessages(prev => [...prev, { sender: 'ai', text: data.reply ?? '—', time: now() }]);
+
+      if (!res.ok) {
+        let errMsg: string;
+        if (res.status === 429) {
+          // Parse the actual Gemini error message to distinguish rate-limit vs quota
+          const rawError: string = data?.error ?? '';
+          if (rawError.toLowerCase().includes('quota') || rawError.toLowerCase().includes('resource_exhausted')) {
+            errMsg = `⚠ Το Gemini API quota εξαντλήθηκε. Λεπτομέρειες: ${rawError}`;
+          } else if (rawError.toLowerCase().includes('rate') || rawError.toLowerCase().includes('too many')) {
+            errMsg = '⚠ Πολλά αιτήματα σε σύντομο χρονικό διάστημα. Περίμενε λίγο και ξαναπροσπάθησε.';
+          } else {
+            errMsg = `⚠ Gemini 429: ${rawError || 'Υπέρβαση ορίου αιτημάτων.'}`;
+          }
+        } else {
+          errMsg = `⚠ Σφάλμα ${res.status}: ${data?.error ?? 'Άγνωστο σφάλμα'}`;
+        }
+        setMessages(prev => [...prev, { sender: 'ai', text: errMsg, time: now() }]);
+        return;
+      }
+
+      setMessages(prev => [...prev, { sender: 'ai', text: data.reply ?? '(κενή απάντηση)', time: now() }]);
     } catch {
-      setMessages(prev => [...prev, { sender: 'ai', text: 'Σφάλμα σύνδεσης.', time: now() }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: '⚠ Αδυναμία σύνδεσης με τον server.', time: now() }]);
     } finally {
       setSending(false);
     }

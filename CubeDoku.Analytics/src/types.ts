@@ -27,4 +27,11 @@ export interface AuditLog {
   completedAt: string;
 }
 
+export interface ChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+  time: string;
+}
+
 export type Tab = 'overview' | 'research' | 'audit';
+

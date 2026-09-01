@@ -1239,13 +1239,14 @@
 
     /* ── Cube canvas: leaves room for top-bar + 2-row dock ── */
     /*   tools row   ~  60px  (fixed height)
+         gap         ~   8px
          numbers row ~  64px  (fixed height)
-         total dock  ~ 124px  + safe area
+         total dock  ~ 132px  + safe area
     */
     .cube-container {
         top: 52px !important;
-        bottom: 124px !important;
-        bottom: calc(124px + env(safe-area-inset-bottom)) !important;
+        bottom: 132px !important;
+        bottom: calc(132px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
     }
@@ -1260,20 +1261,17 @@
         top: auto !important;
         right: 0 !important;
         left: 0 !important;
-        bottom: 60px;
-        bottom: calc(60px + env(safe-area-inset-bottom));
+        /* 60px tools + 8px gap = 68px */
+        bottom: 68px;
+        bottom: calc(68px + env(safe-area-inset-bottom));
         width: 100% !important;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
+        border: none;
         border-top: 1px solid var(--color-border);
         padding: 6px 12px;
         overflow: visible;
         max-height: none;
-        /* pin to a compact fixed height matching number buttons */
         height: 64px;
-        height: calc(64px + 0px);
         box-sizing: border-box;
     }
 
@@ -1306,13 +1304,11 @@
         width: 100% !important;
         max-height: none !important;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
+        border: none;
         border-top: 1px solid var(--color-border);
-        padding: 6px 16px;
+        /* generous side padding makes buttons narrower */
+        padding: 6px 40px;
         padding-bottom: calc(6px + env(safe-area-inset-bottom));
-        /* pin to a compact fixed height so it never overlaps numbers panel */
         height: 60px;
         height: calc(60px + env(safe-area-inset-bottom));
         box-sizing: border-box;
@@ -1324,8 +1320,8 @@
 
     .action-buttons {
         flex-direction: row;
-        justify-content: space-between;
-        gap: 8px;
+        justify-content: center;
+        gap: 14px;
         height: 100%;
     }
 
@@ -1335,7 +1331,8 @@
         aspect-ratio: unset !important;
         height: 100%;
         min-height: unset;
-        max-width: none;
+        /* cap width so buttons don’t stretch too wide */
+        max-width: 72px;
         border-radius: 10px;
         touch-action: manipulation;
     }

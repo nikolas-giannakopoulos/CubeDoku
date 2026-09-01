@@ -125,11 +125,11 @@ export const WelcomeModal = ({ isOpen, onDifficultySelect, onAuthClick, exitToAu
                 <div className="welcome-top-left-buttons">
                     <button className="welcome-text-btn" onClick={() => setIsLeaderboardOpen(true)}>
                         <MdLeaderboard size={16} />
-                        Leaderboard
+                        <span className="welcome-btn-label">Leaderboard</span>
                     </button>
                     <button className="welcome-text-btn" onClick={() => setIsHowToPlayOpen(true)}>
                         <LuCircleHelp size={16} />
-                        How to Play
+                        <span className="welcome-btn-label">How to Play</span>
                     </button>
                 </div>
 

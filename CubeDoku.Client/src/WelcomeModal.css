@@ -806,6 +806,16 @@
         right: auto;
     }
 
+    /* Icon-only mode for leaderboard / how-to-play buttons on mobile */
+    .welcome-top-left-buttons .welcome-btn-label {
+        display: none;
+    }
+
+    .welcome-top-left-buttons .welcome-text-btn {
+        padding: 8px;
+        justify-content: center;
+    }
+
     .logout-warning-modal {
         width: 92%;
         padding: 20px;

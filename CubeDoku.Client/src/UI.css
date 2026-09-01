@@ -1237,16 +1237,16 @@
         font-size: 0.9rem !important;
     }
 
-    /* ── Cube canvas: leaves room for top-bar + 2-row dock ── */
-    /*   tools row   ~  60px  (fixed height)
-         gap         ~   8px
-         numbers row ~  64px  (fixed height)
-         total dock  ~ 132px  + safe area
+    /* ── Cube canvas: leaves room for top-bar + 2-row floating dock ── */
+    /*   tools row   ~  60px  + 10px bottom margin = 70px
+         gap         ~  10px
+         numbers row ~  64px
+         total dock  ~ 144px  + safe area
     */
     .cube-container {
         top: 52px !important;
-        bottom: 132px !important;
-        bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+        bottom: 144px !important;
+        bottom: calc(144px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
     }
@@ -1256,23 +1256,22 @@
         height: 100% !important;
     }
 
-    /* ── Numbers panel (top dock row) ────────────────────── */
+    /* ── Numbers panel — floating card ───────────────────── */
     .right-panel {
         top: auto !important;
-        right: 0 !important;
-        left: 0 !important;
-        /* 60px tools + 8px gap = 68px */
-        bottom: 68px;
-        bottom: calc(68px + env(safe-area-inset-bottom));
-        width: 100% !important;
-        border-radius: 0;
-        border: none;
-        border-top: 1px solid var(--color-border);
-        padding: 6px 12px;
-        overflow: visible;
-        max-height: none;
+        /* 10px margin + 60px tools + 10px gap = 80px */
+        bottom: 80px;
+        bottom: calc(80px + env(safe-area-inset-bottom));
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
         height: 64px;
         box-sizing: border-box;
+        border-radius: 14px;
+        border: 1px solid var(--color-border);
+        padding: 6px 10px;
+        overflow: visible;
+        max-height: none;
     }
 
     .right-panel h2 {
@@ -1281,7 +1280,7 @@
 
     .number-grid {
         grid-template-columns: repeat(9, 1fr);
-        gap: 5px;
+        gap: 4px;
         height: 100%;
     }
 
@@ -1290,28 +1289,26 @@
         aspect-ratio: unset !important;
         height: 100%;
         min-height: unset;
-        font-size: 1.2rem;
-        border-radius: 10px;
+        font-size: 1.1rem;
+        border-radius: 8px;
         touch-action: manipulation;
     }
 
-    /* ── Actions panel (bottom dock row) ─────────────────── */
+    /* ── Tools panel — floating card ─────────────────────── */
     .right-panel-2 {
         top: auto !important;
-        right: 0 !important;
-        left: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
+        bottom: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
         max-height: none !important;
-        border-radius: 0;
-        border: none;
-        border-top: 1px solid var(--color-border);
-        /* generous side padding makes buttons narrower */
-        padding: 6px 40px;
-        padding-bottom: calc(6px + env(safe-area-inset-bottom));
         height: 60px;
-        height: calc(60px + env(safe-area-inset-bottom));
         box-sizing: border-box;
+        border-radius: 14px;
+        border: 1px solid var(--color-border);
+        /* no side padding — space-evenly handles equal gaps */
+        padding: 8px 12px;
     }
 
     .right-panel-2 h2 {
@@ -1320,19 +1317,18 @@
 
     .action-buttons {
         flex-direction: row;
-        justify-content: center;
-        gap: 14px;
+        /* equal space: corner↔button = button↔button */
+        justify-content: space-evenly;
+        gap: 0;
         height: 100%;
     }
 
     .action-btn {
-        flex: 1;
+        flex: 0 1 72px;
         /* override the desktop aspect-ratio: 1 so buttons stay short */
         aspect-ratio: unset !important;
         height: 100%;
         min-height: unset;
-        /* cap width so buttons don’t stretch too wide */
-        max-width: 72px;
         border-radius: 10px;
         touch-action: manipulation;
     }
@@ -1341,12 +1337,16 @@
         display: none;
     }
 
-    /* ── Consistent dock surface ─────────────────────────── */
+    /* ── Floating dock surface ─────────────────────────── */
     .right-panel,
     .right-panel-2 {
         background: var(--color-surface-overlay);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        box-shadow:
+            0 2px 0 rgba(255, 255, 255, 0.06) inset,
+            0 8px 32px rgba(0, 0, 0, 0.35),
+            0 2px 8px rgba(0, 0, 0, 0.2);
         z-index: 110;
     }
 

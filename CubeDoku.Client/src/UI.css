@@ -1238,14 +1238,14 @@
     }
 
     /* ── Cube canvas: leaves room for top-bar + 2-row dock ── */
-    /*   numbers row  ~  62px
-         actions row  ~  56px
-         total dock   ~ 118px  + safe area
+    /*   actions row  ~  60px
+         numbers row  ~  64px
+         total dock   ~ 124px  + safe area
     */
     .cube-container {
         top: 52px !important;
-        bottom: 118px !important;
-        bottom: calc(118px + env(safe-area-inset-bottom)) !important;
+        bottom: 124px !important;
+        bottom: calc(124px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
     }
@@ -1260,15 +1260,15 @@
         top: auto !important;
         right: 0 !important;
         left: 0 !important;
-        bottom: 56px;
-        bottom: calc(56px + env(safe-area-inset-bottom));
+        bottom: 60px;
+        bottom: calc(60px + env(safe-area-inset-bottom));
         width: 100% !important;
         border-radius: 0;
         border-left: none;
         border-right: none;
         border-bottom: none;
         border-top: 1px solid var(--color-border);
-        padding: 8px 12px 6px;
+        padding: 6px 12px 6px;
         overflow: visible;
         max-height: none;
     }
@@ -1283,8 +1283,8 @@
     }
 
     .number-btn {
-        min-height: 50px;
-        font-size: 1.3rem;
+        min-height: 48px;
+        font-size: 1.2rem;
         border-radius: 10px;
         touch-action: manipulation;
     }
@@ -1318,7 +1318,7 @@
 
     .action-btn {
         flex: 1;
-        min-height: 44px;
+        min-height: 48px;
         max-width: none;
         border-radius: 10px;
         touch-action: manipulation;
@@ -1374,12 +1374,12 @@
     }
 
     .number-btn {
-        font-size: 1.1rem;
-        min-height: 46px;
+        font-size: 1rem;
+        min-height: 44px;
     }
 
     .action-btn {
-        min-height: 40px;
+        min-height: 44px;
     }
 
     .number-grid {
@@ -1391,7 +1391,7 @@
     }
 
     .right-panel {
-        padding: 6px 8px 4px;
+        padding: 5px 8px 4px;
     }
 
     .right-panel-2 {

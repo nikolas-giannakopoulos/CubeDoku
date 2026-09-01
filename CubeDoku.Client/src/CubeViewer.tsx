@@ -840,6 +840,7 @@ function CubeViewer() {
     const [completionSummary, setCompletionSummary] = useState<CompletionSummary | null>(null);
     const [rankAnimationStarted, setRankAnimationStarted] = useState(false);
     const [hasCompletionAuthSuccess, setHasCompletionAuthSuccess] = useState(false);
+    const [isMobileExtrasOpen, setIsMobileExtrasOpen] = useState(false);
     const orbitControlsRef = useRef<any>(null);
     const hintRotateRafRef = useRef<number | null>(null);
     const isSavingResultRef = useRef(false);
@@ -1911,6 +1912,15 @@ function CubeViewer() {
                         {Math.floor(gameTimer / 60).toString().padStart(2, '0')}:{(gameTimer % 60).toString().padStart(2, '0')}
                         {currentScore > 0 && <span style={{ marginLeft: '16px', color: 'var(--color-accent)' }}>⭐ {currentScore}</span>}
                     </p>
+                    {/* Mobile-only extras menu button */}
+                    <button
+                        className="icon-button mobile-extras-btn"
+                        title="More options"
+                        onClick={() => setIsMobileExtrasOpen(v => !v)}
+                        aria-label="More options"
+                    >
+                        <LuSettings size={20} />
+                    </button>
                     {isLoggedIn ? (
                         <button className="icon-button stats-btn" onClick={() => setIsProfileOpen(true)}>
                             <MdPerson size={20} />
@@ -1924,6 +1934,37 @@ function CubeViewer() {
                     )}
                 </div>
             </div>
+            {/* Mobile extras sheet */}
+            {isMobileExtrasOpen && (
+                <div className="mobile-extras-overlay" onClick={() => setIsMobileExtrasOpen(false)}>
+                    <div className="mobile-extras-sheet" onClick={e => e.stopPropagation()}>
+                        <div className="mobile-extras-handle" />
+                        <button
+                            className="mobile-extras-item"
+                            onClick={() => { setIsMobileExtrasOpen(false); setIsSettingsOpen(true); }}
+                        >
+                            <LuSettings size={20} />
+                            <span>Settings</span>
+                        </button>
+                        <div className="mobile-extras-divider" />
+                        <button
+                            className="mobile-extras-item"
+                            onClick={() => { setIsMobileExtrasOpen(false); handleGithub(); }}
+                        >
+                            <FaGithub size={20} />
+                            <span>GitHub</span>
+                        </button>
+                        <div className="mobile-extras-divider" />
+                        <button
+                            className="mobile-extras-item"
+                            onClick={() => { setIsMobileExtrasOpen(false); setIsHowToPlayOpen(true); }}
+                        >
+                            <LuCircleHelp size={20} />
+                            <span>How to Play</span>
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* ── Tab-takeover pause overlay ─────────────────────────────── */}
             {isPausedByOtherTab && (
                 <div className="tab-paused-overlay">

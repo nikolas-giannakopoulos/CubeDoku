@@ -1106,18 +1106,110 @@
     color: var(--color-text-primary);
 }
 
-/* =========================================================
-   MOBILE RESPONSIVE LAYOUT  (≤ 768px)
-   =========================================================
-   On mobile the four floating panels collapse into a
-   bottom control dock so the 3-D cube stays fully visible.
+/* ─────────────────────────────────────────────────────────────
+   MOBILE EXTRAS SHEET  (slide-up from top bar gear icon)
+   Hidden on desktop; shown only on mobile.
+───────────────────────────────────────────────────────────────── */
 
-   Dock layout (bottom → top):
-     row 1  → extras: Settings / GitHub / Help
-     row 2  → actions: Undo / Erase / Pencil / Hint
-     row 3  → numbers: 1–9 (horizontal strip)
-   ========================================================= */
+/* Hide the mobile gear button on desktop */
+.mobile-extras-btn {
+    display: none;
+}
+
+.mobile-extras-overlay {
+    display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MOBILE RESPONSIVE LAYOUT  (≤ 768px)
+   ─────────────────────────────────────────────────────────────
+   Dock layout (bottom → top, 2 rows):
+     row 1  → actions: Undo / Erase / Pencil / Hint
+     row 2  → numbers: 1–9 (horizontal strip)
+
+   Extra buttons (Settings / GitHub / How to Play) are accessed
+   via the ⚙ button in the top bar, which opens a slide-up sheet.
+───────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+
+    /* ── Show mobile gear, hide bottom-left panel ─────────── */
+    .mobile-extras-btn {
+        display: inline-flex !important;
+    }
+
+    .bottom-left-panel {
+        display: none !important;
+    }
+
+    /* ── Mobile extras slide-up sheet ────────────────────── */
+    .mobile-extras-overlay {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 500;
+        align-items: flex-end;
+        justify-content: center;
+        animation: fadeIn 0.18s ease;
+    }
+
+    .mobile-extras-sheet {
+        width: 100%;
+        max-width: 480px;
+        background: var(--color-panel-bg);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid var(--color-border);
+        border-bottom: none;
+        border-radius: 20px 20px 0 0;
+        padding: 8px 0 calc(16px + env(safe-area-inset-bottom));
+        box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35);
+        animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mobile-extras-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--color-border-hover);
+        border-radius: 2px;
+        margin: 0 auto 12px;
+    }
+
+    .mobile-extras-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 16px 24px;
+        background: transparent;
+        border: none;
+        color: var(--color-text-primary);
+        font-size: 1rem;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: background 0.12s ease;
+        text-align: left;
+        touch-action: manipulation;
+    }
+
+    .mobile-extras-item:hover,
+    .mobile-extras-item:active {
+        background: var(--color-surface-elevated);
+    }
+
+    .mobile-extras-item svg {
+        color: var(--color-text-secondary);
+        flex-shrink: 0;
+    }
+
+    .mobile-extras-divider {
+        height: 1px;
+        background: var(--color-border);
+        margin: 0 16px;
+    }
 
     /* ── Top bar ──────────────────────────────────────────── */
     .top-bar {
@@ -1126,7 +1218,6 @@
         gap: 6px;
     }
 
-    /* Hide text labels – icons only */
     .top-bar .icon-button span {
         display: none;
     }
@@ -1142,23 +1233,19 @@
         font-size: 0.85rem;
     }
 
-    /* Timer + score compact */
     .top-bar > div > p {
         font-size: 0.9rem !important;
     }
 
-    /* ── Dock heights ─────────────────────────────────────── */
+    /* ── Cube canvas: leaves room for top-bar + 2-row dock ── */
     /*   numbers row  ~  62px
-         actions row  ~  58px
-         extras  row  ~  54px
-         total dock   ~ 174px  (+env safe area)
+         actions row  ~  56px
+         total dock   ~ 118px  + safe area
     */
-
-    /* ── Cube canvas: leave room for top-bar + bottom dock ── */
     .cube-container {
         top: 52px !important;
-        bottom: 174px !important;
-        bottom: calc(174px + env(safe-area-inset-bottom)) !important;
+        bottom: 118px !important;
+        bottom: calc(118px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
     }
@@ -1168,20 +1255,20 @@
         height: 100% !important;
     }
 
-    /* ── Numbers panel (top row of dock) ─────────────────── */
+    /* ── Numbers panel (top dock row) ────────────────────── */
     .right-panel {
         top: auto !important;
         right: 0 !important;
         left: 0 !important;
-        bottom: 112px;
-        bottom: calc(112px + env(safe-area-inset-bottom));
+        bottom: 56px;
+        bottom: calc(56px + env(safe-area-inset-bottom));
         width: 100% !important;
         border-radius: 0;
         border-left: none;
         border-right: none;
         border-bottom: none;
         border-top: 1px solid var(--color-border);
-        padding: 8px 12px 4px;
+        padding: 8px 12px 6px;
         overflow: visible;
         max-height: none;
     }
@@ -1190,27 +1277,24 @@
         display: none;
     }
 
-    /* 9 numbers in one horizontal strip */
     .number-grid {
         grid-template-columns: repeat(9, 1fr);
-        gap: 4px;
+        gap: 5px;
     }
 
     .number-btn {
-        min-height: 46px;
-        font-size: 1.25rem;
+        min-height: 50px;
+        font-size: 1.3rem;
         border-radius: 10px;
-        /* Comfortable tap zone */
         touch-action: manipulation;
     }
 
-    /* ── Actions panel (middle row of dock) ──────────────── */
+    /* ── Actions panel (bottom dock row) ─────────────────── */
     .right-panel-2 {
         top: auto !important;
         right: 0 !important;
         left: 0 !important;
-        bottom: 54px;
-        bottom: calc(54px + env(safe-area-inset-bottom));
+        bottom: 0 !important;
         width: 100% !important;
         max-height: none !important;
         border-radius: 0;
@@ -1219,6 +1303,7 @@
         border-bottom: none;
         border-top: 1px solid var(--color-border);
         padding: 6px 12px;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom));
     }
 
     .right-panel-2 h2 {
@@ -1228,7 +1313,7 @@
     .action-buttons {
         flex-direction: row;
         justify-content: space-around;
-        gap: 6px;
+        gap: 8px;
     }
 
     .action-btn {
@@ -1239,54 +1324,13 @@
         touch-action: manipulation;
     }
 
-    /* Hint counter is too cramped on mobile */
     .hint-counter {
         display: none;
     }
 
-    /* ── Extras panel (bottom row of dock) ───────────────── */
-    .bottom-left-panel {
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        top: auto !important;
-        width: 100% !important;
-        border-radius: 0;
-        border: none;
-        border-top: 1px solid var(--color-border);
-        padding: 6px 12px;
-        padding-bottom: calc(6px + env(safe-area-inset-bottom));
-        min-height: 54px;
-        display: flex;
-        align-items: center;
-    }
-
-    .bottom-left-panel h3,
-    .bottom-left-panel p {
-        display: none;
-    }
-
-    .extra-buttons {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-        gap: 8px;
-    }
-
-    .extra-btn {
-        flex: 1;
-        max-width: none;
-        min-height: 42px;
-        aspect-ratio: unset;
-        border-radius: 10px;
-        touch-action: manipulation;
-    }
-
     /* ── Consistent dock surface ─────────────────────────── */
     .right-panel,
-    .right-panel-2,
-    .bottom-left-panel {
+    .right-panel-2 {
         background: var(--color-surface-overlay);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -1326,25 +1370,32 @@
 /* Extra-small (≤ 420px): tighten further */
 @media (max-width: 420px) {
     .top-bar h1 {
-        font-size: 0.78rem;
+        display: none;
     }
 
     .number-btn {
-        font-size: 1rem;
-        min-height: 42px;
+        font-size: 1.1rem;
+        min-height: 46px;
     }
 
-    .action-btn,
-    .extra-btn {
+    .action-btn {
         min-height: 40px;
     }
 
-    .right-panel {
-        padding: 6px 6px 2px;
+    .number-grid {
+        gap: 3px;
     }
 
-    .right-panel-2,
-    .bottom-left-panel {
-        padding: 4px 6px;
+    .action-buttons {
+        gap: 5px;
+    }
+
+    .right-panel {
+        padding: 6px 8px 4px;
+    }
+
+    .right-panel-2 {
+        padding: 4px 8px;
+        padding-bottom: calc(4px + env(safe-area-inset-bottom));
     }
 }

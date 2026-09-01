@@ -346,3 +346,34 @@
         opacity: 1;
     }
 }
+
+/* ── ProfileModal mobile tweaks ─────────────────────────── */
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 20px 14px;
+        max-height: 95vh;
+        width: 95% !important;
+        max-width: 100% !important;
+    }
+
+    .profile-stats-overlay {
+        padding: 12px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25rem;
+    }
+
+    .modal-username {
+        font-size: 0.95rem;
+    }
+
+    /* Stats cards – allow wrapping on very narrow screens */
+    .stats-container {
+        flex-wrap: wrap;
+    }
+
+    .verify-popup-overlay {
+        padding: 12px;
+    }
+}

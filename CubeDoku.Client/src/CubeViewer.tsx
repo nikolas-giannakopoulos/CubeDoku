@@ -1842,48 +1842,6 @@ function CubeViewer() {
         broadcast({ type: 'GAME_STARTED', difficulty: state.difficulty });
     };
 
-    // DEV ONLY — auto-fills the solution, scores all faces, and triggers game completion.
-    const handleDevSolve = async () => {
-        if (isWelcomeOpen) return;
-        try {
-            const headers: Record<string, string> = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            const res = await fetch(`/api/game/solution?difficulty=${currentDifficultyRef.current}`, { headers });
-            if (!res.ok) throw new Error(`Solution endpoint returned ${res.status}`);
-            const cells: { face: string; row: number; column: number; value: number }[] = await res.json();
-
-            const solvedBoard = cells.map(c => ({ id: `${c.face}_${c.row}_${c.column}`, value: c.value }));
-            serverErrorsRef.current = new Set();
-            setMockBoardData(solvedBoard);
-
-            // Award score for all 6 faces (simulating the player completing them)
-            const allFaces = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'];
-            const now = Date.now();
-            allFaces.forEach(f => {
-                if (!completedFacesRef.current.has(f)) {
-                    completedFacesRef.current.add(f);
-                    scoreRef.current += 500; // no time bonus in dev mode
-                }
-            });
-            setCurrentScore(scoreRef.current);
-
-            // Stop timer and mark solved
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-            lastActionTimeRef.current = now;
-            setIsSolved(true);
-            gameActiveRef.current = false;
-            // Clear the saved slot — the game is finished
-            clearProgress(currentDifficultyRef.current);
-            setSavedProgress(prev => {
-                const next = { ...prev };
-                delete next[currentDifficultyRef.current];
-                return next;
-            });
-            await handleGameComplete();
-        } catch (err) {
-            console.error('[DEV] Auto-solve failed:', err);
-        }
-    };
 
     // --- Tab sync: handle another tab taking over or reclaiming our session ---
     const { broadcast } = useTabSync({
@@ -2263,14 +2221,6 @@ function CubeViewer() {
                     </button>
                     <button className="extra-btn" title="How to Play" onClick={() => setIsHowToPlayOpen(true)}>
                         <LuCircleHelp size={20} />
-                    </button>
-                    <button
-                        className="extra-btn dev-solve-btn"
-                        title="[DEV] Auto-solve puzzle"
-                        onClick={handleDevSolve}
-                        disabled={isWelcomeOpen || isSolved}
-                    >
-                        <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'inherit' }}>DEV</span>
                     </button>
                 </div>
             </div>

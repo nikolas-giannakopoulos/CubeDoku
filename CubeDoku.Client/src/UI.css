@@ -475,22 +475,6 @@
     background: var(--color-text-tertiary);
 }
 
-.dev-solve-btn {
-    border-color: rgba(245, 158, 11, 0.4) !important;
-    color: #F59E0B !important;
-}
-
-.dev-solve-btn:hover {
-    background: rgba(245, 158, 11, 0.12) !important;
-    border-color: #F59E0B !important;
-    color: #FBBF24 !important;
-}
-
-.dev-solve-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    transform: none !important;
-}
 
 .confirm-reset-overlay {
     position: fixed;
@@ -1121,3 +1105,246 @@
     border-color: var(--color-border-hover);
     color: var(--color-text-primary);
 }
+
+/* =========================================================
+   MOBILE RESPONSIVE LAYOUT  (≤ 768px)
+   =========================================================
+   On mobile the four floating panels collapse into a
+   bottom control dock so the 3-D cube stays fully visible.
+
+   Dock layout (bottom → top):
+     row 1  → extras: Settings / GitHub / Help
+     row 2  → actions: Undo / Erase / Pencil / Hint
+     row 3  → numbers: 1–9 (horizontal strip)
+   ========================================================= */
+@media (max-width: 768px) {
+
+    /* ── Top bar ──────────────────────────────────────────── */
+    .top-bar {
+        height: 52px;
+        padding: 0 10px;
+        gap: 6px;
+    }
+
+    /* Hide text labels – icons only */
+    .top-bar .icon-button span {
+        display: none;
+    }
+
+    .top-bar .icon-button {
+        padding: 8px 10px;
+        gap: 0;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    .top-bar h1 {
+        font-size: 0.85rem;
+    }
+
+    /* Timer + score compact */
+    .top-bar > div > p {
+        font-size: 0.9rem !important;
+    }
+
+    /* ── Dock heights ─────────────────────────────────────── */
+    /*   numbers row  ~  62px
+         actions row  ~  58px
+         extras  row  ~  54px
+         total dock   ~ 174px  (+env safe area)
+    */
+
+    /* ── Cube canvas: leave room for top-bar + bottom dock ── */
+    .cube-container {
+        top: 52px !important;
+        bottom: 174px !important;
+        bottom: calc(174px + env(safe-area-inset-bottom)) !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    .cube-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* ── Numbers panel (top row of dock) ─────────────────── */
+    .right-panel {
+        top: auto !important;
+        right: 0 !important;
+        left: 0 !important;
+        bottom: 112px;
+        bottom: calc(112px + env(safe-area-inset-bottom));
+        width: 100% !important;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-top: 1px solid var(--color-border);
+        padding: 8px 12px 4px;
+        overflow: visible;
+        max-height: none;
+    }
+
+    .right-panel h2 {
+        display: none;
+    }
+
+    /* 9 numbers in one horizontal strip */
+    .number-grid {
+        grid-template-columns: repeat(9, 1fr);
+        gap: 4px;
+    }
+
+    .number-btn {
+        min-height: 46px;
+        font-size: 1.25rem;
+        border-radius: 10px;
+        /* Comfortable tap zone */
+        touch-action: manipulation;
+    }
+
+    /* ── Actions panel (middle row of dock) ──────────────── */
+    .right-panel-2 {
+        top: auto !important;
+        right: 0 !important;
+        left: 0 !important;
+        bottom: 54px;
+        bottom: calc(54px + env(safe-area-inset-bottom));
+        width: 100% !important;
+        max-height: none !important;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-top: 1px solid var(--color-border);
+        padding: 6px 12px;
+    }
+
+    .right-panel-2 h2 {
+        display: none;
+    }
+
+    .action-buttons {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 6px;
+    }
+
+    .action-btn {
+        flex: 1;
+        min-height: 44px;
+        max-width: none;
+        border-radius: 10px;
+        touch-action: manipulation;
+    }
+
+    /* Hint counter is too cramped on mobile */
+    .hint-counter {
+        display: none;
+    }
+
+    /* ── Extras panel (bottom row of dock) ───────────────── */
+    .bottom-left-panel {
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        border-radius: 0;
+        border: none;
+        border-top: 1px solid var(--color-border);
+        padding: 6px 12px;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom));
+        min-height: 54px;
+        display: flex;
+        align-items: center;
+    }
+
+    .bottom-left-panel h3,
+    .bottom-left-panel p {
+        display: none;
+    }
+
+    .extra-buttons {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 8px;
+    }
+
+    .extra-btn {
+        flex: 1;
+        max-width: none;
+        min-height: 42px;
+        aspect-ratio: unset;
+        border-radius: 10px;
+        touch-action: manipulation;
+    }
+
+    /* ── Consistent dock surface ─────────────────────────── */
+    .right-panel,
+    .right-panel-2,
+    .bottom-left-panel {
+        background: var(--color-surface-overlay);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        z-index: 110;
+    }
+
+    /* ── Modals: full-width on mobile ────────────────────── */
+    .complete-modal {
+        width: 95vw;
+        padding: 16px;
+    }
+
+    .complete-board-header,
+    .complete-board-row {
+        grid-template-columns: 44px 1fr 64px 60px;
+        font-size: 0.8rem;
+        gap: 4px;
+        padding: 0 8px;
+    }
+
+    .confirm-reset-modal {
+        padding: 24px 18px 18px;
+    }
+
+    /* ── Profile modal ────────────────────────────────────── */
+    .modal-content {
+        padding: 20px 16px;
+        max-height: 95vh;
+    }
+
+    /* ── Auth modal ───────────────────────────────────────── */
+    .auth-modal {
+        padding: 22px 18px 16px;
+    }
+}
+
+/* Extra-small (≤ 420px): tighten further */
+@media (max-width: 420px) {
+    .top-bar h1 {
+        font-size: 0.78rem;
+    }
+
+    .number-btn {
+        font-size: 1rem;
+        min-height: 42px;
+    }
+
+    .action-btn,
+    .extra-btn {
+        min-height: 40px;
+    }
+
+    .right-panel {
+        padding: 6px 6px 2px;
+    }
+
+    .right-panel-2,
+    .bottom-left-panel {
+        padding: 4px 6px;
+    }
+}

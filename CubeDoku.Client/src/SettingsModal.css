@@ -165,3 +165,22 @@
     background: var(--color-accent);
     color: #fff;
 }
+
+/* ── SettingsModal mobile tweaks ───────────────────────── */
+@media (max-width: 768px) {
+    /* Remove the min-width that causes overflow on mobile */
+    .settings-modal-content {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .settings-tab {
+        font-size: 0.82rem;
+        padding: 8px 8px;
+    }
+
+    .settings-guest-cta {
+        padding: 16px 4px 4px;
+        gap: 14px;
+    }
+}

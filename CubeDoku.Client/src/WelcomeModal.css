@@ -747,3 +747,82 @@
 .logout-confirm-btn:active {
     transform: translateY(0);
 }
+
+/* ── WelcomeModal mobile tweaks ────────────────────────── */
+@media (max-width: 768px) {
+    .welcome-modal {
+        width: 95%;
+        padding: 16px;
+        max-height: 92vh;
+    }
+
+    .welcome-header h1 {
+        font-size: 22px;
+        padding: 0 80px; /* room for corner buttons */
+        letter-spacing: -0.5px;
+    }
+
+    .welcome-header .subtitle {
+        font-size: 15px;
+    }
+
+    .leaderboard-content {
+        width: 95%;
+        padding: 20px 16px;
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    .leaderboard-table-wrap {
+        max-height: 44vh;
+    }
+
+    .difficulty-buttons {
+        gap: 10px;
+    }
+
+    .difficulty-btn {
+        padding: 12px;
+    }
+
+    .difficulty-icon img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .difficulty-name {
+        font-size: 14px;
+    }
+
+    /* Welcome top-corner icon buttons – tuck in a bit */
+    .welcome-top-buttons,
+    .welcome-top-left-buttons {
+        top: 16px;
+        right: 16px;
+    }
+
+    .welcome-top-left-buttons {
+        left: 16px;
+        right: auto;
+    }
+
+    .logout-warning-modal {
+        width: 92%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 420px) {
+    .welcome-header h1 {
+        font-size: 18px;
+        padding: 0 66px;
+    }
+
+    .welcome-header .subtitle {
+        font-size: 13px;
+    }
+
+    .difficulty-name {
+        font-size: 13px;
+    }
+}

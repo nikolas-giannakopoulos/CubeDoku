@@ -29,10 +29,14 @@ public class SecurityHeadersMiddleware(RequestDelegate next)
         // connect-src: API calls go to 'self', Google OAuth goes to accounts.google.com
         headers["Content-Security-Policy"] =
             "default-src 'self'; " +
-            "script-src 'self'; " +
+            // 'unsafe-eval' is required by Three.js for GLSL shader compilation at runtime.
+            // blob: is required by Vite for dynamic code-split chunks and by Three.js for WebWorkers.
+            "script-src 'self' 'unsafe-eval' blob:; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "font-src 'self' https://fonts.gstatic.com; " +
-            "img-src 'self' data: https:; " +
+            "img-src 'self' data: blob: https:; " +
+            // Three.js / @react-three/fiber spawns workers from blob: URLs
+            "worker-src blob:; " +
             "connect-src 'self' https://accounts.google.com https://www.googleapis.com; " +
             "frame-ancestors 'none';";
 

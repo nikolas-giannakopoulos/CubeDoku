@@ -1,12 +1,12 @@
-using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.IdentityModel.Tokens;
 using CubeDoku.Server.Data;
 using CubeDoku.Server.Models.UserModels;
 
@@ -55,50 +55,58 @@ public class AuthController(ApplicationDbContext db, IConfiguration config) : Co
     }
 
     // POST /api/auth/google
-    // The frontend sends the ID token from Google and we validate it server-side
-    // If the user doesn't exist yet we create an account for them automatically
+    // The frontend (useGoogleLogin implicit flow) sends an OAuth2 access token.
+    // We exchange it for user info via Google's userinfo endpoint.
+    // If the user doesn't exist yet we create an account for them automatically.
     [HttpPost("google")]
     [EnableRateLimiting("AuthPolicy")]
-    public async Task<ActionResult<AuthResponse>> GoogleAuth([FromBody] GoogleAuthRequest req)
+    public async Task<ActionResult<AuthResponse>> GoogleAuth(
+        [FromBody] GoogleAuthRequest req,
+        [FromServices] IHttpClientFactory httpClientFactory)
     {
-        var clientId = config["Google:ClientId"]
-            ?? throw new InvalidOperationException("Google:ClientId is not configured.");
+        if (string.IsNullOrWhiteSpace(req.IdToken))
+            return BadRequest("Missing access token.");
 
-        GoogleJsonWebSignature.Payload? payload;
+        // Call Google's userinfo endpoint with the access token
+        using var client = httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.IdToken);
+
+        HttpResponseMessage userInfoResponse;
         try
         {
-            payload = await GoogleJsonWebSignature.ValidateAsync(
-                req.IdToken,
-                new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = [clientId]
-                });
+            userInfoResponse = await client.GetAsync("https://www.googleapis.com/oauth2/v3/userinfo");
         }
-        catch (InvalidJwtException)
+        catch
         {
-            return Unauthorized("Invalid or expired Google token.");
+            return StatusCode(503, "Could not reach Google's authentication service.");
         }
 
-        if (string.IsNullOrEmpty(payload.Email))
-            return Unauthorized("Could not retrieve email from Google token.");
+        if (!userInfoResponse.IsSuccessStatusCode)
+            return Unauthorized("Invalid or expired Google access token.");
+
+        var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<GoogleUserInfo>();
+
+        if (userInfo == null || string.IsNullOrEmpty(userInfo.Email))
+            return Unauthorized("Could not retrieve email from Google.");
 
         // check if this Google account has been used before
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == userInfo.Email);
         if (user == null)
         {
             // first time with this Google account, create a new user
             user = new User
             {
-                Username = payload.Name ?? payload.Email,
-                Email = payload.Email,
-                GoogleID = payload.Subject
+                Username = userInfo.Name ?? userInfo.Email,
+                Email = userInfo.Email,
+                GoogleID = userInfo.Sub
             };
             db.Users.Add(user);
         }
         else if (user.GoogleID == null)
         {
             // user registered with email/password before and is now linking Google
-            user.GoogleID = payload.Subject;
+            user.GoogleID = userInfo.Sub;
         }
 
         await db.SaveChangesAsync();

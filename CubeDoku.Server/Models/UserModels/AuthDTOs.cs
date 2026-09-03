@@ -17,9 +17,17 @@ public record LoginRequest(
     [Required, EmailAddress, MaxLength(256)] string Email,
     [Required, MaxLength(128)] string Password);
 
-// used by POST /api/auth/google - the frontend sends the Google ID token (a JWT)
+// used by POST /api/auth/google - the frontend sends the OAuth2 access token
+// (from useGoogleLogin implicit flow). The field is named IdToken to avoid
+// a breaking change to the existing request shape.
 public record GoogleAuthRequest(
     [Required, MaxLength(2048)] string IdToken);
+
+// response from Google's userinfo endpoint (https://www.googleapis.com/oauth2/v3/userinfo)
+public record GoogleUserInfo(
+    [property: System.Text.Json.Serialization.JsonPropertyName("sub")]   string Sub,
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")] string? Email,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")]  string? Name);
 
 // returned by all auth endpoints - the frontend saves the token to localStorage
 public record AuthResponse(string Token, string Username, string Email);

@@ -114,10 +114,13 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
-
-if (!app.Environment.IsDevelopment())
+// On Render.com (and similar cloud hosts), HTTPS is terminated at the edge.
+// The app receives plain HTTP internally, so UseHttpsRedirection would issue
+// 307 redirects on every request (breaking POST→GET and CORS preflight).
+// HSTS is also only meaningful when the server itself is serving HTTPS.
+if (app.Environment.IsDevelopment())
 {
+    app.UseHttpsRedirection();
     app.UseHsts();
 }
 

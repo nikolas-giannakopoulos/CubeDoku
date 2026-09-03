@@ -1238,15 +1238,15 @@
     }
 
     /* ── Cube canvas: leaves room for top-bar + 2-row floating dock ── */
-    /*   tools row   ~  60px  + 10px bottom margin = 70px
+    /*   tools row   ~  70px  + 10px bottom margin = 80px
          gap         ~  10px
-         numbers row ~  64px
-         total dock  ~ 144px  + safe area
+         numbers row ~  72px
+         total dock  ~ 162px  + safe area
     */
     .cube-container {
         top: 52px !important;
-        bottom: 144px !important;
-        bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+        bottom: 162px !important;
+        bottom: calc(162px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
     }
@@ -1259,13 +1259,13 @@
     /* ── Numbers panel — floating card ───────────────────── */
     .right-panel {
         top: auto !important;
-        /* 10px margin + 60px tools + 10px gap = 80px */
-        bottom: 80px;
-        bottom: calc(80px + env(safe-area-inset-bottom));
+        /* 10px margin + 70px tools + 10px gap = 90px */
+        bottom: 90px;
+        bottom: calc(90px + env(safe-area-inset-bottom));
         left: 10px !important;
         right: 10px !important;
         width: auto !important;
-        height: 64px;
+        height: 72px;
         box-sizing: border-box;
         border-radius: 14px;
         border: 1px solid var(--color-border);
@@ -1292,6 +1292,7 @@
         font-size: 1.1rem;
         border-radius: 8px;
         touch-action: manipulation;
+        margin: 4px 0;
     }
 
     /* ── Tools panel — floating card ─────────────────────── */
@@ -1303,12 +1304,11 @@
         right: 10px !important;
         width: auto !important;
         max-height: none !important;
-        height: 60px;
+        height: 70px;
         box-sizing: border-box;
         border-radius: 14px;
         border: 1px solid var(--color-border);
-        /* no side padding — space-evenly handles equal gaps */
-        padding: 8px 12px;
+        padding: 0 12px;
     }
 
     .right-panel-2 h2 {
@@ -1319,18 +1319,21 @@
         flex-direction: row;
         /* equal space: corner↔button = button↔button */
         justify-content: space-evenly;
+        align-items: center;
         gap: 0;
         height: 100%;
     }
 
     .action-btn {
-        flex: 0 1 72px;
-        /* override the desktop aspect-ratio: 1 so buttons stay short */
-        aspect-ratio: unset !important;
-        height: 100%;
+        flex: 0 0 auto;
+        /* square: equal width and height */
+        width: 50px;
+        height: 50px;
+        aspect-ratio: 1 !important;
         min-height: unset;
         border-radius: 10px;
         touch-action: manipulation;
+        margin: 0;
     }
 
     .hint-counter {
@@ -1403,7 +1406,11 @@
     }
 
     .right-panel-2 {
-        padding: 4px 8px;
-        padding-bottom: calc(4px + env(safe-area-inset-bottom));
+        padding: 0 8px;
+    }
+
+    .action-btn {
+        width: 44px;
+        height: 44px;
     }
 }

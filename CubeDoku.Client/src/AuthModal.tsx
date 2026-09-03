@@ -37,8 +37,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
     }, [isOpen]);
 
     // Google OAuth - opens a popup window managed by Google
-    // on success: token send to backend
+    // on success: access token is sent to backend which calls Google's userinfo endpoint
+    // scope must explicitly request email+profile so the userinfo API returns them
     const googleLogin = useGoogleLogin({
+        scope: 'openid email profile',
         onSuccess: async (tokenResponse) => {
             try {
                 await loginWithGoogle(tokenResponse.access_token);
@@ -48,11 +50,11 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, openedFromWelcome }:
                     onAuthSuccess?.();
                     onClose();
                 }, 1500);
-            } catch {
-                setError('Google login failed.');
+            } catch (e: any) {
+                setError(typeof e?.message === 'string' ? e.message : 'Google login failed.');
             }
         },
-        onError: () => setError('Google login failed.'),
+        onError: (err) => setError(`Google login failed${err?.error_description ? ': ' + err.error_description : '.'}`),
     });
 
     const { shouldRender, isClosing } = useModalTransition(isOpen);

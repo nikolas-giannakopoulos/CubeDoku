@@ -1906,7 +1906,7 @@ function CubeViewer() {
                     <LuRefreshCw size={20} />
                     <span>Start Over</span>
                 </button>
-                <h1 style={{ alignItems: 'center' }}>CubeDoku Viewer</h1>
+                <h1 style={{ alignItems: 'center' }}>CubeDoku</h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
                     <p style={{ color: 'var(--color-text-primary)', fontSize: '1.1rem', margin: 0 }}>
                         {Math.floor(gameTimer / 60).toString().padStart(2, '0')}:{(gameTimer % 60).toString().padStart(2, '0')}

@@ -13,8 +13,10 @@ public record RegisterRequest(
     [Required, MinLength(8), MaxLength(128)] string Password);
 
 // used by POST /api/auth/login
+// No [EmailAddress] here — login just does a DB lookup, so if the format is wrong
+// the query returns null and we respond with 401. No need to pre-validate format.
 public record LoginRequest(
-    [Required, EmailAddress, MaxLength(256)] string Email,
+    [Required, MaxLength(256)] string Email,
     [Required, MaxLength(128)] string Password);
 
 // used by POST /api/auth/google - the frontend sends the OAuth2 access token

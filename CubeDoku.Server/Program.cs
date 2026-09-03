@@ -124,10 +124,19 @@ if (app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (!app.Environment.IsDevelopment())
+// TEMPORARY: expose exception details to diagnose production 500s — REVERT after fix
+app.UseExceptionHandler(errApp => errApp.Run(async context =>
 {
-    app.UseExceptionHandler("/api/error");
-}
+    var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    context.Response.ContentType = "application/problem+json";
+    context.Response.StatusCode = 500;
+    await context.Response.WriteAsJsonAsync(new
+    {
+        title = "An unexpected error occurred.",
+        status = 500,
+        detail = ex?.ToString()   // full stack trace — REMOVE before going live
+    });
+}));
 
 app.UseSecurityHeaders();
 
@@ -141,14 +150,4 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
-app.Map("/api/error", (HttpContext context) =>
-{
-    context.Response.ContentType = "application/problem+json";
-    return Results.Problem(
-        title: "An unexpected error occurred.",
-        detail: null,          // never expose internal detail in production
-        statusCode: 500);
-});
-
 app.Run();
-

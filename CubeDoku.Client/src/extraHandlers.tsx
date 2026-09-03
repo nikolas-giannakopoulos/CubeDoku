@@ -3,7 +3,7 @@ export const handleSettings = () => {
 }
 
 export const handleGithub = () => {
-    window.open('https://github.com/nikolas-giannakopoulos/CubeDoku-Cube', '_blank');
+    window.open('https://github.com/nikolas-giannakopoulos', '_blank');
 }
 
 export const handleHowToPlay = () => {

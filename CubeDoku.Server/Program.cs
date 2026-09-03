@@ -18,9 +18,46 @@ builder.Services.AddControllers()
     });
 
 // using PostgreSQL
+// Cloud providers (Neon, Supabase, Render) supply connection strings as postgresql:// URIs.
+// Npgsql's DbConnectionStringBuilder can fail to parse these when query params are malformed
+// (e.g. ?sslmode without a value), so we parse URI format manually and convert to key=value.
+var rawConn = builder.Configuration.GetConnectionString("DefaultConnection")
+              ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+              ?? throw new InvalidOperationException(
+                     "No database connection string configured. " +
+                     "Set ConnectionStrings__DefaultConnection or DATABASE_URL.");
+
+static string ToNpgsqlConnectionString(string raw)
+{
+    if (!raw.StartsWith("postgresql://") && !raw.StartsWith("postgres://"))
+        return raw; // already in key=value format, pass through unchanged
+
+    var uri = new Uri(raw);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password  = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var host     = uri.Host;
+    var port     = uri.Port > 0 ? uri.Port : 5432;
+    var database = uri.AbsolutePath.TrimStart('/');
+
+    // parse query string for sslmode; default to Require for cloud DBs
+    var sslMode = "Require";
+    var query = uri.Query.TrimStart('?');
+    foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var kv = part.Split('=', 2);
+        if (kv[0].Equals("sslmode", StringComparison.OrdinalIgnoreCase) && kv.Length == 2)
+            sslMode = kv[1];
+    }
+
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate=true;";
+}
+
+var connectionString = ToNpgsqlConnectionString(rawConn);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        connectionString,
         npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
@@ -29,7 +66,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // HttpClient (Google OAuth)
 builder.Services.AddHttpClient();
 
-// JWT Authentication 
+// JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -47,7 +84,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-//  CORS 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
@@ -67,7 +104,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Rate Limiting 
+// Rate Limiting
 builder.Services.AddRateLimiter(rateLimiter =>
 {
     // auth endpoints: 10 requests per IP per minute

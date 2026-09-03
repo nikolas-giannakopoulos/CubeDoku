@@ -1265,13 +1265,15 @@
         left: 10px !important;
         right: 10px !important;
         width: auto !important;
-        height: 72px;
+        height: 70px;
         box-sizing: border-box;
         border-radius: 14px;
         border: 1px solid var(--color-border);
-        padding: 6px 10px;
+        padding: 0 10px;
         overflow: visible;
         max-height: none;
+        display: flex;
+        align-items: center;
     }
 
     .right-panel h2 {
@@ -1281,18 +1283,21 @@
     .number-grid {
         grid-template-columns: repeat(9, 1fr);
         gap: 4px;
-        height: 100%;
+        width: 100%;
+        height: auto;
+        align-items: center;
+        justify-items: center;
     }
 
     .number-btn {
-        /* override desktop aspect-ratio: 1, fill the row height */
-        aspect-ratio: unset !important;
-        height: 100%;
+        /* square: same width and height as tool buttons */
+        aspect-ratio: 1 !important;
+        width: 100%;
+        height: auto;
         min-height: unset;
         font-size: 1.1rem;
         border-radius: 8px;
         touch-action: manipulation;
-        margin: 4px 0;
     }
 
     /* ── Tools panel — floating card ─────────────────────── */
@@ -1402,7 +1407,7 @@
     }
 
     .right-panel {
-        padding: 5px 8px 4px;
+        padding: 0 6px;
     }
 
     .right-panel-2 {

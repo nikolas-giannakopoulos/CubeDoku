@@ -2254,6 +2254,9 @@ function CubeViewer() {
             {/* Bottom Left Floating Panel */}
             <div className="bottom-left-panel">
                 <div className="extra-buttons">
+                    <button className="extra-btn" title="Settings" onClick={() => setIsSettingsOpen(true)}>
+                        <LuSettings size={20} />
+                    </button>
                     <button className="extra-btn" title="GitHub" onClick={handleGithub}>
                         <FaGithub size={20} />
                     </button>

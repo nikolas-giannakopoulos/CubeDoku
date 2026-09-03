@@ -1112,8 +1112,9 @@
 ───────────────────────────────────────────────────────────────── */
 
 /* Hide the mobile gear button on desktop */
-.mobile-extras-btn {
-    display: none;
+.mobile-extras-btn,
+.top-bar .icon-button.mobile-extras-btn {
+    display: none !important;
 }
 
 .mobile-extras-overlay {

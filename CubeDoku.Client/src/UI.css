@@ -1114,7 +1114,7 @@
 /* Hide the mobile gear button on desktop */
 .mobile-extras-btn,
 .top-bar .icon-button.mobile-extras-btn {
-    display: none !important;
+    display: none;
 }
 
 .mobile-extras-overlay {
@@ -1134,7 +1134,8 @@
 @media (max-width: 768px) {
 
     /* ── Show mobile gear, hide bottom-left panel ─────────── */
-    .mobile-extras-btn {
+    .mobile-extras-btn,
+    .top-bar .icon-button.mobile-extras-btn {
         display: inline-flex !important;
     }
 

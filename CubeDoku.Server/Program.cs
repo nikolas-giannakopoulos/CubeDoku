@@ -97,7 +97,8 @@ builder.Services.AddCors(options =>
                 "https://localhost:7055",
                 "https://cubedoku.com",
                 "https://www.cubedoku.com",
-                "https://cube-doku.vercel.app")
+                "https://cube-doku.vercel.app",
+                "https://cubedoku.onrender.com")
             .AllowAnyMethod()
             .WithHeaders("Authorization", "Content-Type", "Accept")
             .AllowCredentials();

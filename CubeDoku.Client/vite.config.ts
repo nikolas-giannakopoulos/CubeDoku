@@ -47,7 +47,7 @@ const target = env.ASPNETCORE_URLS
         ?.replace('localhost', '127.0.0.1')
     : env.ASPNETCORE_HTTPS_PORT
         ? `https://127.0.0.1:${env.ASPNETCORE_HTTPS_PORT}`
-        : 'https://cubedoku-server.onrender.com';
+        : 'https://cubedoku.onrender.com';
 
 // https://vitejs.dev/config/
 export default defineConfig({
